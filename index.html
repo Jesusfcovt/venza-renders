@@ -29,6 +29,31 @@ canvas:active{cursor:grabbing;}
 #watermark{position:fixed;bottom:110px;right:14px;z-index:12;pointer-events:none;}
 #watermark img{height:40px;width:auto;opacity:.18;display:block;}
 
+/* HIDE UI MODE */
+body.ui-hidden #header,
+body.ui-hidden #bottom,
+body.ui-hidden #floats,
+body.ui-hidden #watermark,
+body.ui-hidden #autoind,
+body.ui-hidden #gyrind{
+  opacity:0;pointer-events:none;transition:opacity .3s;
+}
+body.ui-hidden #btn-hide{
+  opacity:.35 !important;pointer-events:all !important;
+}
+
+/* HIDE BUTTON */
+#btn-hide{
+  position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 10px);left:50%;
+  transform:translateX(-50%);z-index:30;
+  background:rgba(8,9,12,.65);border:1px solid rgba(255,255,255,.2);
+  border-radius:20px;padding:6px 16px;
+  color:rgba(255,255,255,.6);font-size:9px;letter-spacing:.18em;text-transform:uppercase;
+  cursor:pointer;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  transition:opacity .3s;white-space:nowrap;
+}
+#btn-hide:active{background:rgba(200,169,110,.25);border-color:#c8a96e;color:#c8a96e;}
+
 
 
 /* BOTTOM */
@@ -111,6 +136,7 @@ canvas:active{cursor:grabbing;}
 <div class="ind" id="autoind">● Auto-rotando</div>
 <div class="ind" id="gyrind">● Giroscopio activo</div>
 <div id="share-toast">✓ Link copiado</div>
+<button id="btn-hide">&#x25BC; Ocultar UI</button>
 
 <div id="bottom">
   <div id="bottom-inner">
