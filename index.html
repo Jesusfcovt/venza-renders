@@ -335,6 +335,26 @@ pi.onload=pi.onerror=function(){
   setTimeout(function(){document.getElementById('loader').classList.add('done');loadScene(0);},600);
 };
 pi.src=SCENES[0].src;
+
+/* ── HIDE UI ── */
+var uiHidden = false;
+var btnHide  = document.getElementById('btn-hide');
+
+btnHide.addEventListener('click', function(e){
+  e.stopPropagation();
+  uiHidden = !uiHidden;
+  document.body.classList.toggle('ui-hidden', uiHidden);
+  btnHide.textContent = uiHidden ? '▲ Mostrar UI' : '▼ Ocultar UI';
+});
+
+// Tap anywhere on canvas to show UI again
+canvas.addEventListener('click', function(){
+  if(uiHidden){
+    uiHidden = false;
+    document.body.classList.remove('ui-hidden');
+    btnHide.textContent = '▼ Ocultar UI';
+  }
+});
 </script>
 </body>
 </html>
