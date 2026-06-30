@@ -70,19 +70,20 @@ body.ui-hidden #btn-hide{
 #ctrl-col{display:flex;flex-direction:column;align-items:center;gap:5px;flex-shrink:0;}
 #ctrl-lbl{color:rgba(184,189,198,.35);font-size:8px;letter-spacing:.13em;text-transform:uppercase;}
 #zoom-row{display:flex;gap:6px;}
-.zbtn{width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.07);color:#b8bdc6;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s,border-color .15s;}
+.zbtn{width:28px;height:28px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.07);color:#b8bdc6;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s,border-color .15s;}
 .zbtn:active{background:rgba(200,169,110,.25);border-color:#c8a96e;color:#c8a96e;}
 
 /* FLOAT BUTTONS */
-#floats{position:fixed;z-index:21;top:0;right:0;padding-top:calc(env(safe-area-inset-top,0px) + 175px);padding-right:14px;display:flex;flex-direction:column;gap:7px;}
-.fbtn{width:36px;height:36px;border-radius:8px;border:1px solid rgba(255,255,255,.18);background:rgba(8,9,12,.72);color:#b8bdc6;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:background .15s,border-color .15s,color .15s;}
+#floats{position:fixed;z-index:21;top:0;right:0;padding-top:calc(env(safe-area-inset-top,0px) + 175px);padding-right:14px;display:flex;flex-direction:column;gap:5px;}
+.fbtn{width:28px;height:28px;border-radius:7px;border:1px solid rgba(255,255,255,.18);background:rgba(8,9,12,.72);color:#b8bdc6;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:background .15s,border-color .15s,color .15s;}
 .fbtn.on,.fbtn:active{background:rgba(200,169,110,.25);border-color:#c8a96e;color:#c8a96e;}
-.fbtn svg{width:17px;height:17px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;}
+.fbtn svg{width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;}
 
 /* INDICATORS */
 .ind{position:fixed;left:50%;z-index:25;bottom:calc(env(safe-area-inset-bottom,0px) + 100px);transform:translateX(-50%);border-radius:20px;padding:4px 12px;font-size:9px;letter-spacing:.13em;text-transform:uppercase;opacity:0;transition:opacity .4s;pointer-events:none;white-space:nowrap;}
 #autoind{background:rgba(200,169,110,.16);border:1px solid rgba(200,169,110,.35);color:#c8a96e;}
 #gyrind{background:rgba(80,160,255,.14);border:1px solid rgba(80,160,255,.35);color:rgba(130,200,255,.9);}
+#calind{background:rgba(255,200,80,.14);border:1px solid rgba(255,200,80,.35);color:rgba(255,220,100,.9);}
 .ind.on{opacity:1;}
 
 /* SHARE TOAST */
@@ -128,6 +129,7 @@ body.ui-hidden #btn-hide{
   <button class="fbtn" id="btn-gyro">
     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M6.3 6.3a8 8 0 1 0 11.4 0"/><path d="M12 2v4M12 18v4"/></svg>
   </button>
+  <button class="fbtn" id="btn-cal" title="Calibrar giroscopio">&#x25CE;</button>
   <button class="fbtn" id="btn-share">
     <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="2"/><circle cx="6" cy="12" r="2"/><circle cx="18" cy="19" r="2"/><path d="M8 13.5l8 4M16 6.5l-8 4"/></svg>
   </button>
@@ -135,6 +137,7 @@ body.ui-hidden #btn-hide{
 
 <div class="ind" id="autoind">● Auto-rotando</div>
 <div class="ind" id="gyrind">● Giroscopio activo</div>
+<div class="ind" id="calind">✓ Calibrado</div>
 <div id="share-toast">✓ Link copiado</div>
 <button id="btn-hide">&#x25BC; Ocultar UI</button>
 
@@ -275,8 +278,20 @@ document.getElementById('btn-fs').addEventListener('click',function(){if(!docume
 document.addEventListener('fullscreenchange',function(){if(!document.fullscreenElement)document.getElementById('btn-fs').textContent='⛶';setTimeout(function(){renderer.setSize(window.innerWidth,window.innerHeight);camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();},150);});
 
 // ── GYRO ───────────────────────────────────────────────────────────────────
-function startGyro(){gyroOn=true;prevAlpha=null;prevBeta=null;prevGamma=null;document.getElementById('btn-gyro').classList.add('on');document.getElementById('gyrind').classList.add('on');dismissHint();}
-function stopGyro(){gyroOn=false;document.getElementById('btn-gyro').classList.remove('on');document.getElementById('gyrind').classList.remove('on');}
+function startGyro(){
+  gyroOn=true;
+  // Auto-calibrate on start: current orientation = forward
+  calAlpha=rawAlpha; calBeta=rawBeta; calGamma=rawGamma;
+  gyroCalibrated=true;
+  document.getElementById('btn-gyro').classList.add('on');
+  document.getElementById('gyrind').classList.add('on');
+  dismissHint();
+}
+function stopGyro(){
+  gyroOn=false;gyroCalibrated=false;
+  document.getElementById('btn-gyro').classList.remove('on');
+  document.getElementById('gyrind').classList.remove('on');
+}
 document.getElementById('btn-gyro').addEventListener('click',function(){
   if(gyroOn){stopGyro();return;}
   if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function'){
@@ -311,14 +326,33 @@ window.addEventListener('resize',function(){renderer.setSize(window.innerWidth,w
 function animate(){
   requestAnimationFrame(animate);
   if(gyroOn){
-    if(prevAlpha===null){prevAlpha=rawAlpha;prevBeta=rawBeta;prevGamma=rawGamma;}
-    else{
-      var screenAngle=(window.screen.orientation&&window.screen.orientation.angle!=null)?window.screen.orientation.angle:(window.orientation||0);
-      var dA=wrapDelta(rawAlpha-prevAlpha),dB=rawBeta-prevBeta,dG=rawGamma-prevGamma;
-      if(Math.abs(screenAngle)===90){lon-=dG*.8;lat+=dB*.4;}else{lon-=dA*.8;lat+=dB*.8;}
-      lat=Math.max(-85,Math.min(85,lat));
-      prevAlpha=rawAlpha;prevBeta=rawBeta;prevGamma=rawGamma;
+    // Apply calibration offsets
+    var a = wrapAngle(rawAlpha - calAlpha);
+    var b = rawBeta  - calBeta;
+    var g = rawGamma - calGamma;
+
+    var screenAngle = (window.screen.orientation && window.screen.orientation.angle != null)
+                      ? window.screen.orientation.angle : (window.orientation || 0);
+
+    var targetLon, targetLat;
+
+    if(Math.abs(screenAngle) === 90){
+      // Landscape
+      targetLon = -a * 1.0;
+      targetLat =  g * 0.8;
+    } else {
+      // Portrait — beta: 90=vertical, 0=flat
+      // remap so holding phone upright (beta~90) = looking forward (lat=0)
+      targetLon = -a * 1.0;
+      targetLat =  -(b - 90) * 0.9;
     }
+
+    targetLat = Math.max(-85, Math.min(85, targetLat));
+
+    // Smooth interpolation
+    lon += wrapDelta(targetLon - lon) * 0.12;
+    lat += (targetLat - lat) * 0.12;
+
   }else if(autoRot&&!dragging){lon+=0.1;}
 
   var phi=(90-lat)*DEG2RAD, theta=lon*DEG2RAD;
@@ -335,6 +369,21 @@ pi.onload=pi.onerror=function(){
   setTimeout(function(){document.getElementById('loader').classList.add('done');loadScene(0);},600);
 };
 pi.src=SCENES[0].src;
+
+
+/* ── CALIBRATE GYRO ── */
+document.getElementById('btn-cal').addEventListener('click',function(){
+  if(!gyroOn){
+    // activate gyro first if not on
+    document.getElementById('btn-gyro').click();
+    return;
+  }
+  // Set current device orientation as "forward"
+  calAlpha=rawAlpha; calBeta=rawBeta; calGamma=rawGamma;
+  var ci=document.getElementById('calind');
+  ci.classList.add('on');
+  setTimeout(function(){ci.classList.remove('on');},1500);
+});
 
 /* ── HIDE UI ── */
 var uiHidden = false;
