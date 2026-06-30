@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta property="og:title" content="Recorrido Virtual 360° · Arq. Francisco Valenzuela">
+<meta property="og:description" content="Recorrido virtual 360° — VENZA Construcciones">
+<title>Recorrido Virtual 360° · Arq. Francisco Valenzuela</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{width:100%;height:100%;overflow:hidden;background:#0a0b0d;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+canvas{display:block;width:100%;height:100%;position:fixed;top:0;left:0;touch-action:none;cursor:grab;}
+canvas:active{cursor:grabbing;}
+
+#header{position:fixed;top:0;left:0;right:0;z-index:20;padding-top:env(safe-area-inset-top,0px);background:linear-gradient(to bottom,rgba(8,9,12,.92) 65%,transparent);pointer-events:none;}
+#header-inner{display:flex;align-items:center;gap:12px;padding:10px 16px 22px;}
+#logo-img{height:140px;width:auto;flex-shrink:0;object-fit:contain;display:block;filter:drop-shadow(0 2px 10px rgba(0,0,0,.6));}
+#spacer-h{flex:1;}
+#scene-pill{flex-shrink:0;background:rgba(200,169,110,.12);border:1px solid rgba(200,169,110,.3);border-radius:20px;padding:4px 11px;color:#c8a96e;font-size:9px;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;}
+
+#hint{position:fixed;top:50%;left:50%;z-index:15;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:10px;pointer-events:none;transition:opacity .9s;}
+#hint.hidden{opacity:0;}
+#hint-ring{width:58px;height:58px;border-radius:50%;border:2px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;animation:pulse 2.2s ease-in-out infinite;}
+#hint-ring svg{width:28px;height:28px;stroke:rgba(255,255,255,.75);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;}
+#hint-txt{color:rgba(255,255,255,.5);font-size:10px;letter-spacing:.18em;text-transform:uppercase;text-align:center;}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:.6;}50%{transform:scale(1.08);opacity:1;}}
+
+#watermark{position:fixed;bottom:110px;right:14px;z-index:12;pointer-events:none;}
+#watermark img{height:40px;width:auto;opacity:.18;display:block;filter:drop-shadow(0 1px 4px rgba(0,0,0,.5));}
+
+#bottom{position:fixed;bottom:0;left:0;right:0;z-index:20;padding-bottom:env(safe-area-inset-bottom,0px);background:linear-gradient(to top,rgba(8,9,12,.93) 65%,transparent);}
+#bottom-inner{display:flex;align-items:flex-end;gap:10px;padding:20px 14px 18px;}
+#thumbs{display:flex;gap:8px;flex-shrink:0;}
+.tw{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;}
+.tb{width:68px;height:42px;border-radius:6px;overflow:hidden;border:2px solid rgba(255,255,255,.12);transition:border-color .2s,transform .15s;flex-shrink:0;}
+.tb:active{transform:scale(.94);}
+.tb.active{border-color:#c8a96e;box-shadow:0 0 10px rgba(200,169,110,.45);}
+.tb img{width:100%;height:100%;object-fit:cover;display:block;}
+.tn{color:rgba(184,189,198,.5);font-size:7px;letter-spacing:.1em;text-transform:uppercase;text-align:center;max-width:68px;}
+#spacer-b{flex:1;}
+#ctrl-col{display:flex;flex-direction:column;align-items:center;gap:5px;flex-shrink:0;}
+#ctrl-lbl{color:rgba(184,189,198,.35);font-size:8px;letter-spacing:.13em;text-transform:uppercase;}
+#zoom-row{display:flex;gap:6px;}
+.zbtn{width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.07);color:#b8bdc6;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s,border-color .15s;}
+.zbtn:active{background:rgba(200,169,110,.25);border-color:#c8a96e;color:#c8a96e;}
+
+#floats{position:fixed;z-index:21;top:0;right:0;padding-top:calc(env(safe-area-inset-top,0px) + 160px);padding-right:14px;display:flex;flex-direction:column;gap:7px;}
+.fbtn{width:36px;height:36px;border-radius:8px;border:1px solid rgba(255,255,255,.18);background:rgba(8,9,12,.72);color:#b8bdc6;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:background .15s,border-color .15s,color .15s;}
+.fbtn.on,.fbtn:active{background:rgba(200,169,110,.25);border-color:#c8a96e;color:#c8a96e;}
+.fbtn svg{width:17px;height:17px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;}
+
+.ind{position:fixed;left:50%;z-index:25;bottom:calc(env(safe-area-inset-bottom,0px) + 100px);transform:translateX(-50%);border-radius:20px;padding:4px 12px;font-size:9px;letter-spacing:.13em;text-transform:uppercase;opacity:0;transition:opacity .4s;pointer-events:none;white-space:nowrap;}
+#autoind{background:rgba(200,169,110,.16);border:1px solid rgba(200,169,110,.35);color:#c8a96e;}
+#gyrind{background:rgba(80,160,255,.14);border:1px solid rgba(80,160,255,.35);color:rgba(130,200,255,.9);}
+.ind.on{opacity:1;}
+
+#share-toast{position:fixed;left:50%;z-index:30;top:calc(env(safe-area-inset-top,0px) + 170px);transform:translateX(-50%) translateY(-20px);background:rgba(20,22,28,.96);border:1px solid rgba(200,169,110,.4);border-radius:12px;padding:10px 18px;color:#fff;font-size:12px;opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;white-space:nowrap;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);}
+#share-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+#loader{position:fixed;inset:0;z-index:50;background:#0a0b0d;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .7s;}
+#loader.done{opacity:0;pointer-events:none;}
+#loader-logo-wrap{padding:20px 40px;border-radius:16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);margin-bottom:4px;}
+#loader-logo-wrap img{height:100px;width:auto;display:block;}
+#loader-bar-wrap{width:160px;height:2px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden;margin-top:4px;}
+#loader-bar{height:100%;background:#c8a96e;width:0%;transition:width .35s ease;}
+#loader-sub{color:rgba(184,189,198,.4);font-size:9px;letter-spacing:.18em;text-transform:uppercase;}
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+
+<div id="loader">
+  <div id="loader-logo-wrap"><img src="logo.png" alt="Logo"></div>
+  <div id="loader-bar-wrap"><div id="loader-bar"></div></div>
+  <div id="loader-sub">Cargando recorrido 360°…</div>
+</div>
+
+<div id="header">
+  <div id="header-inner">
+    <img id="logo-img" src="logo.png" alt="Logo">
+    <div id="spacer-h"></div>
+    <div id="scene-pill">1 / 3</div>
+  </div>
+</div>
+
+<div id="watermark"><img src="logo.png" alt=""></div>
+
+<div id="hint">
+  <div id="hint-ring"><svg viewBox="0 0 24 24"><path d="M8 12h8M4 8l4 4-4 4M20 8l-4 4 4 4"/></svg></div>
+  <div id="hint-txt">Arrastra para explorar</div>
+</div>
+
+<div id="floats">
+  <button class="fbtn" id="btn-fs" title="Pantalla completa">&#x26F6;</button>
+  <button class="fbtn" id="btn-auto" title="Auto-rotar">&#8635;</button>
+  <button class="fbtn" id="btn-gyro" title="Giroscopio">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M6.3 6.3a8 8 0 1 0 11.4 0"/><path d="M12 2v4M12 18v4"/></svg>
+  </button>
+  <button class="fbtn" id="btn-share" title="Compartir">
+    <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="2"/><circle cx="6" cy="12" r="2"/><circle cx="18" cy="19" r="2"/><path d="M8 13.5l8 4M16 6.5l-8 4"/></svg>
+  </button>
+</div>
+
+<div class="ind" id="autoind">● Auto-rotando</div>
+<div class="ind" id="gyrind">● Giroscopio activo</div>
+<div id="share-toast">✓ Link copiado</div>
+
+<div id="bottom">
+  <div id="bottom-inner">
+    <div id="thumbs"></div>
+    <div id="spacer-b"></div>
+    <div id="ctrl-col">
+      <div id="ctrl-lbl">Zoom</div>
+      <div id="zoom-row">
+        <div class="zbtn" id="btn-zout">&#8722;</div>
+        <div class="zbtn" id="btn-zin">+</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+var SCENES=[
+  {src:'escena1.jpg', label:'Área Asador',  thumb:'Asador'},
+  {src:'escena2.jpg', label:'Alberca',       thumb:'Alberca'},
+  {src:'escena3.jpg', label:'Jardín',        thumb:'Jardín'}
+];
+var canvas=document.getElementById('canvas');
+var renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.setSize(window.innerWidth,window.innerHeight);
+var scene3=new THREE.Scene();
+var camera=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,1000);
+var geo=new THREE.SphereGeometry(500,72,36);
+geo.scale(-1,1,1);
+var mesh=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:0x111111}));
+scene3.add(mesh);
+var texLoader=new THREE.TextureLoader();
+var lon=0,lat=0,fov=75,dragging=false,lx=0,ly=0,autoRot=false,hintOff=false,pinch0=0;
+var gyroOn=false,rawAlpha=0,rawBeta=0,rawGamma=0,prevAlpha=null,prevBeta=null,prevGamma=null;
+
+function wrapDelta(d){while(d>180)d-=360;while(d<-180)d+=360;return d;}
+window.addEventListener('deviceorientation',function(e){rawAlpha=e.alpha||0;rawBeta=e.beta||0;rawGamma=e.gamma||0;},true);
+
+function loadScene(idx){
+  document.querySelectorAll('.tb').forEach(function(t,j){t.classList.toggle('active',j===idx);});
+  document.getElementById('scene-pill').textContent=(idx+1)+' / '+SCENES.length;
+  texLoader.load(SCENES[idx].src,function(tex){
+    tex.minFilter=THREE.LinearFilter;tex.magFilter=THREE.LinearFilter;
+    var nm=new THREE.MeshBasicMaterial({map:tex,transparent:true,opacity:0});
+    mesh.material=nm;
+    var op=0,fi=setInterval(function(){op+=0.06;nm.opacity=Math.min(op,1);if(op>=1){nm.transparent=false;clearInterval(fi);}},16);
+  });
+}
+
+var thumbsEl=document.getElementById('thumbs');
+SCENES.forEach(function(sc,i){
+  var wrap=document.createElement('div');wrap.className='tw';
+  var tb=document.createElement('div');tb.className='tb'+(i===0?' active':'');
+  var img=document.createElement('img');img.src=sc.src;img.alt=sc.thumb;
+  tb.appendChild(img);wrap.appendChild(tb);
+  var lbl=document.createElement('div');lbl.className='tn';lbl.textContent=sc.thumb;
+  wrap.appendChild(lbl);
+  wrap.addEventListener('click',function(){loadScene(i);});
+  thumbsEl.appendChild(wrap);
+});
+
+function dismissHint(){if(!hintOff){hintOff=true;document.getElementById('hint').classList.add('hidden');}}
+
+canvas.addEventListener('mousedown',function(e){dragging=true;lx=e.clientX;ly=e.clientY;autoRot=false;document.getElementById('autoind').classList.remove('on');document.getElementById('btn-auto').classList.remove('on');dismissHint();});
+window.addEventListener('mousemove',function(e){if(!dragging)return;lon-=(e.clientX-lx)*.22;lat+=(e.clientY-ly)*.22;lat=Math.max(-85,Math.min(85,lat));lx=e.clientX;ly=e.clientY;});
+window.addEventListener('mouseup',function(){dragging=false;});
+canvas.addEventListener('touchstart',function(e){dismissHint();if(e.touches.length===1){lx=e.touches[0].clientX;ly=e.touches[0].clientY;autoRot=false;document.getElementById('autoind').classList.remove('on');document.getElementById('btn-auto').classList.remove('on');}if(e.touches.length===2){pinch0=Math.hypot(e.touches[1].clientX-e.touches[0].clientX,e.touches[1].clientY-e.touches[0].clientY);}},{passive:true});
+canvas.addEventListener('touchmove',function(e){if(e.touches.length===1){lon-=(e.touches[0].clientX-lx)*.28;lat+=(e.touches[0].clientY-ly)*.28;lat=Math.max(-85,Math.min(85,lat));lx=e.touches[0].clientX;ly=e.touches[0].clientY;}if(e.touches.length===2){var d=Math.hypot(e.touches[1].clientX-e.touches[0].clientX,e.touches[1].clientY-e.touches[0].clientY);fov*=pinch0/d;fov=Math.max(30,Math.min(110,fov));camera.fov=fov;camera.updateProjectionMatrix();pinch0=d;}},{passive:true});
+canvas.addEventListener('wheel',function(e){e.preventDefault();fov+=e.deltaY*.04;fov=Math.max(30,Math.min(110,fov));camera.fov=fov;camera.updateProjectionMatrix();dismissHint();},{passive:false});
+document.getElementById('btn-zin').addEventListener('click',function(){fov=Math.max(30,fov-10);camera.fov=fov;camera.updateProjectionMatrix();});
+document.getElementById('btn-zout').addEventListener('click',function(){fov=Math.min(110,fov+10);camera.fov=fov;camera.updateProjectionMatrix();});
+document.getElementById('btn-auto').addEventListener('click',function(){autoRot=!autoRot;document.getElementById('autoind').classList.toggle('on',autoRot);document.getElementById('btn-auto').classList.toggle('on',autoRot);});
+document.getElementById('btn-fs').addEventListener('click',function(){if(!document.fullscreenElement){document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();document.getElementById('btn-fs').textContent='✕';}else{document.exitFullscreen&&document.exitFullscreen();}});
+document.addEventListener('fullscreenchange',function(){if(!document.fullscreenElement)document.getElementById('btn-fs').textContent='⛶';setTimeout(function(){renderer.setSize(window.innerWidth,window.innerHeight);camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();},150);});
+
+function startGyro(){gyroOn=true;prevAlpha=null;prevBeta=null;prevGamma=null;document.getElementById('btn-gyro').classList.add('on');document.getElementById('gyrind').classList.add('on');dismissHint();}
+function stopGyro(){gyroOn=false;document.getElementById('btn-gyro').classList.remove('on');document.getElementById('gyrind').classList.remove('on');}
+document.getElementById('btn-gyro').addEventListener('click',function(){
+  if(gyroOn){stopGyro();return;}
+  if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function'){
+    DeviceOrientationEvent.requestPermission().then(function(s){if(s==='granted')startGyro();else alert('Permiso denegado. Actívalo en Ajustes > Safari.');}).catch(function(){alert('No se pudo solicitar el giroscopio.');});
+  }else{startGyro();}
+});
+document.getElementById('btn-share').addEventListener('click',function(){
+  var url=window.location.href;
+  if(navigator.share){navigator.share({title:'Recorrido Virtual 360° · Arq. Francisco Valenzuela',text:'Recorrido virtual 360° — VENZA Construcciones',url:url}).catch(function(){});return;}
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(url).then(function(){showToast('✓ Link copiado');}).catch(function(){window.prompt('Copia este link:',url);});}else{window.prompt('Copia este link:',url);}
+});
+function showToast(msg){var t=document.getElementById('share-toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2500);}
+window.addEventListener('keydown',function(e){if(e.key==='ArrowLeft'){lon-=2;dismissHint();}if(e.key==='ArrowRight'){lon+=2;dismissHint();}if(e.key==='ArrowUp'){lat=Math.min(85,lat+2);dismissHint();}if(e.key==='ArrowDown'){lat=Math.max(-85,lat-2);dismissHint();}if(e.key==='+'||e.key==='='){fov=Math.max(30,fov-5);camera.fov=fov;camera.updateProjectionMatrix();}if(e.key==='-'){fov=Math.min(110,fov+5);camera.fov=fov;camera.updateProjectionMatrix();}if(e.key==='1')loadScene(0);if(e.key==='2')loadScene(1);if(e.key==='3')loadScene(2);if(e.key==='f'||e.key==='F')document.getElementById('btn-fs').click();if(e.key==='r'||e.key==='R')document.getElementById('btn-auto').click();if(e.key==='g'||e.key==='G')document.getElementById('btn-gyro').click();if(e.key==='s'||e.key==='S')document.getElementById('btn-share').click();});
+window.addEventListener('resize',function(){renderer.setSize(window.innerWidth,window.innerHeight);camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();});
+
+var DEG2RAD=Math.PI/180;
+function animate(){
+  requestAnimationFrame(animate);
+  if(gyroOn){
+    if(prevAlpha===null){prevAlpha=rawAlpha;prevBeta=rawBeta;prevGamma=rawGamma;}
+    else{
+      var screenAngle=(window.screen.orientation&&window.screen.orientation.angle!=null)?window.screen.orientation.angle:(window.orientation||0);
+      var dA=wrapDelta(rawAlpha-prevAlpha),dB=rawBeta-prevBeta,dG=rawGamma-prevGamma;
+      if(Math.abs(screenAngle)===90){lon-=dG*.8;lat+=dB*.4;}else{lon-=dA*.8;lat+=dB*.8;}
+      lat=Math.max(-85,Math.min(85,lat));
+      prevAlpha=rawAlpha;prevBeta=rawBeta;prevGamma=rawGamma;
+    }
+  }else if(autoRot&&!dragging){lon+=0.1;}
+  var phi=(90-lat)*DEG2RAD,theta=lon*DEG2RAD;
+  camera.lookAt(500*Math.sin(phi)*Math.cos(theta),500*Math.cos(phi),500*Math.sin(phi)*Math.sin(theta));
+  renderer.render(scene3,camera);
+}
+animate();
+
+var lb=document.getElementById('loader-bar');lb.style.width='35%';
+var pi=new Image();
+pi.onload=pi.onerror=function(){lb.style.width='100%';setTimeout(function(){document.getElementById('loader').classList.add('done');loadScene(0);},600);};
+pi.src=SCENES[0].src;
+</script>
+</body>
+</html>
