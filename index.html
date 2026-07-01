@@ -25,6 +25,14 @@ canvas:active{cursor:grabbing;}
 #hint-txt{color:rgba(255,255,255,.5);font-size:10px;letter-spacing:.18em;text-transform:uppercase;text-align:center;}
 @keyframes pulse{0%,100%{transform:scale(1);opacity:.6;}50%{transform:scale(1.08);opacity:1;}}
 
+/* HOTSPOTS */
+.hs{position:fixed;transform:translate(-50%,-50%);z-index:11;cursor:pointer;pointer-events:all;display:flex;flex-direction:column;align-items:center;gap:5px;}
+.hs-ring{width:42px;height:42px;border-radius:50%;border:2px solid rgba(255,255,255,.9);background:rgba(255,255,255,.15);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;animation:hspulse 2s ease-in-out infinite;transition:transform .15s,background .15s;}
+.hs:active .hs-ring{transform:scale(.88);background:rgba(200,169,110,.5);}
+.hs-dot{width:10px;height:10px;border-radius:50%;background:white;}
+.hs-label{background:rgba(8,9,12,.78);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:3px 9px;color:#fff;font-size:9px;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;pointer-events:none;}
+@keyframes hspulse{0%{box-shadow:0 0 0 0 rgba(255,255,255,.5);}70%{box-shadow:0 0 0 12px rgba(255,255,255,0);}100%{box-shadow:0 0 0 0 rgba(255,255,255,0);}}
+
 /* WATERMARK */
 #watermark{position:fixed;bottom:110px;right:14px;z-index:12;pointer-events:none;}
 #watermark img{height:40px;width:auto;opacity:.18;display:block;}
@@ -35,7 +43,8 @@ body.ui-hidden #bottom,
 body.ui-hidden #floats,
 body.ui-hidden #watermark,
 body.ui-hidden #autoind,
-body.ui-hidden #gyrind{
+body.ui-hidden #gyrind,
+body.ui-hidden .hs{
   opacity:0;pointer-events:none;transition:opacity .3s;
 }
 body.ui-hidden #btn-hide{
@@ -209,7 +218,7 @@ function loadScene(idx, startLon){
     mesh.material = nm;
     var op=0, fi=setInterval(function(){
       op+=0.06; nm.opacity=Math.min(op,1);
-      if(op>=1){nm.transparent=false; clearInterval(fi);}
+      if(op>=1){nm.transparent=false; clearInterval(fi); createHotspots(idx);}
     },16);
   });
 }
@@ -358,6 +367,7 @@ function animate(){
   var phi=(90-lat)*DEG2RAD, theta=lon*DEG2RAD;
   camera.lookAt(500*Math.sin(phi)*Math.cos(theta),500*Math.cos(phi),500*Math.sin(phi)*Math.sin(theta));
   renderer.render(scene3,camera);
+  updateHotspots();
 }
 animate();
 
@@ -370,6 +380,49 @@ pi.onload=pi.onerror=function(){
 };
 pi.src=SCENES[0].src;
 
+
+
+/* ── HOTSPOTS ── */
+function createHotspots(sceneIdx){
+  document.querySelectorAll('.hs').forEach(function(h){h.remove();});
+  var sc = SCENES[sceneIdx];
+  if(!sc.hotspots) return;
+  sc.hotspots.forEach(function(h){
+    var el=document.createElement('div'); el.className='hs';
+    el.dataset.lon=h.lon; el.dataset.lat=h.lat; el.dataset.target=h.targetScene;
+    el.innerHTML='<div class="hs-ring"><div class="hs-dot"></div></div><div class="hs-label">'+h.label+'</div>';
+    el.addEventListener('click',function(e){
+      e.stopPropagation();
+      loadScene(parseInt(el.dataset.target));
+      dismissHint();
+    });
+    document.body.appendChild(el);
+  });
+}
+
+function updateHotspots(){
+  document.querySelectorAll('.hs').forEach(function(el){
+    var hLon=parseFloat(el.dataset.lon);
+    var hLat=parseFloat(el.dataset.lat);
+    var phi=(90-hLat)*DEG2RAD, theta=hLon*DEG2RAD;
+    var px=500*Math.sin(phi)*Math.cos(theta);
+    var py=500*Math.cos(phi);
+    var pz=500*Math.sin(phi)*Math.sin(theta);
+    var vec=new THREE.Vector3(px,py,pz);
+    var camDir=new THREE.Vector3();
+    camera.getWorldDirection(camDir);
+    var dot=camDir.dot(vec.clone().normalize());
+    if(dot<0.15){el.style.opacity='0';el.style.pointerEvents='none';return;}
+    var proj=vec.clone().project(camera);
+    var sx=(proj.x*.5+.5)*window.innerWidth;
+    var sy=(proj.y*-.5+.5)*window.innerHeight;
+    var alpha=Math.min(1,(dot-.15)*2.5);
+    el.style.opacity=alpha.toFixed(2);
+    el.style.pointerEvents=dot>.3?'all':'none';
+    el.style.left=sx+'px';
+    el.style.top=sy+'px';
+  });
+}
 
 /* ── CALIBRATE GYRO ── */
 document.getElementById('btn-cal').addEventListener('click',function(){
