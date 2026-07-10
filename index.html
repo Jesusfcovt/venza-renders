@@ -65,15 +65,10 @@ canvas{display:block;width:100%;height:100%;position:fixed;top:0;left:0;touch-ac
 
 /* HIDE UI */
 #hideui{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 10px);left:50%;transform:translateX(-50%);z-index:30;background:rgba(8,9,12,.65);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:6px 16px;color:rgba(255,255,255,.6);font-size:9px;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;}
-body.uih #hdr,body.uih #bot,body.uih #floats,body.uih #sname,body.uih #aind,body.uih #gind,body.uih .hs{opacity:0;pointer-events:none;}
+body.uih #hdr,body.uih #bot,body.uih #floats,body.uih #sname,body.uih #aind,body.uih #gind{opacity:0;pointer-events:none;}
 body.uih #hideui{opacity:.3;}
 
-/* HOTSPOTS */
-.hs{position:fixed;transform:translate(-50%,-50%);z-index:11;cursor:pointer;pointer-events:all;display:flex;flex-direction:column;align-items:center;gap:5px;transition:opacity .3s;}
-.hs-r{width:40px;height:40px;border-radius:50%;border:2px solid rgba(255,255,255,.9);background:rgba(255,255,255,.15);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;animation:hsp 2s ease-in-out infinite;}
-.hs-d{width:10px;height:10px;border-radius:50%;background:white;}
-.hs-l{background:rgba(8,9,12,.8);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:3px 8px;color:#fff;font-size:8px;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;pointer-events:none;}
-@keyframes hsp{0%{box-shadow:0 0 0 0 rgba(255,255,255,.5);}70%{box-shadow:0 0 0 12px rgba(255,255,255,0);}100%{box-shadow:0 0 0 0 rgba(255,255,255,0);}}
+
 
 /* HINT */
 #hint{position:fixed;top:50%;left:50%;z-index:15;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:10px;pointer-events:none;transition:opacity .9s;}
@@ -91,6 +86,36 @@ body.uih #hideui{opacity:.3;}
 #lbw{width:140px;height:2px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden;}
 #lb{height:100%;background:#c8a96e;width:0%;transition:width .3s;}
 #lsub{color:rgba(184,189,198,.4);font-size:9px;letter-spacing:.18em;text-transform:uppercase;}
+
+/* MUSIC CONTROLS */
+#music-ctrl{
+  position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 88px);left:14px;
+  z-index:22;display:flex;align-items:center;gap:8px;
+  background:rgba(8,9,12,.72);border:1px solid rgba(255,255,255,.15);
+  border-radius:20px;padding:5px 12px 5px 8px;
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  transition:opacity .3s;
+}
+body.uih #music-ctrl{opacity:0;pointer-events:none;}
+#mbtn{
+  width:26px;height:26px;border-radius:50%;
+  border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);
+  color:#fff;font-size:11px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  transition:background .15s;
+}
+#mbtn:active{background:rgba(200,169,110,.35);border-color:#c8a96e;}
+#mvol{
+  -webkit-appearance:none;appearance:none;
+  width:60px;height:3px;border-radius:2px;
+  background:rgba(255,255,255,.2);outline:none;cursor:pointer;
+}
+#mvol::-webkit-slider-thumb{
+  -webkit-appearance:none;width:12px;height:12px;
+  border-radius:50%;background:#c8a96e;cursor:pointer;
+}
+#mlbl{color:rgba(255,255,255,.5);font-size:8px;letter-spacing:.1em;text-transform:uppercase;}
+
 </style>
 </head>
 <body>
@@ -170,12 +195,9 @@ body.uih #hideui{opacity:.3;}
 <script>
 // ── SCENES ──────────────────────────────────────────────────────────────────
 var SC=[
-  {src:'escena1.jpg',label:'Área Asador',thumb:'Asador',
-   hs:[{lon:30,lat:-8,to:2,lbl:'Jardín'},{lon:65,lat:-8,to:1,lbl:'Alberca'}]},
-  {src:'escena2.jpg',label:'Alberca',thumb:'Alberca',
-   hs:[{lon:355,lat:-12,to:0,lbl:'Asador'},{lon:18,lat:-12,to:2,lbl:'Jardín'}]},
-  {src:'escena3.jpg',label:'Jardín',thumb:'Jardín',
-   hs:[{lon:320,lat:-10,to:1,lbl:'Alberca'},{lon:15,lat:-10,to:0,lbl:'Asador'}]}
+  {src:'escena1.jpg',label:'Área Asador',thumb:'Asador'},
+  {src:'escena2.jpg',label:'Alberca',thumb:'Alberca'},
+  {src:'escena3.jpg',label:'Jardín',thumb:'Jardín'}
 ];
 
 // ── THREE ────────────────────────────────────────────────────────────────────
@@ -219,7 +241,7 @@ function loadScene(i){
     mesh.material=m;
     var op=0,fi=setInterval(function(){
       op+=0.06; m.opacity=Math.min(op,1);
-      if(op>=1){m.transparent=false;clearInterval(fi);buildHS(i);}
+      if(op>=1){m.transparent=false;clearInterval(fi);}
     },16);
   });
 }
@@ -237,35 +259,7 @@ SC.forEach(function(sc,i){
   tEl.appendChild(w);
 });
 
-// ── HOTSPOTS ─────────────────────────────────────────────────────────────────
-function buildHS(si){
-  document.querySelectorAll('.hs').forEach(function(h){h.remove();});
-  SC[si].hs.forEach(function(h){
-    var el=document.createElement('div');el.className='hs';
-    el.dataset.lon=h.lon;el.dataset.lat=h.lat;el.dataset.to=h.to;
-    el.innerHTML='<div class="hs-r"><div class="hs-d"></div></div><div class="hs-l">'+h.lbl+'</div>';
-    el.addEventListener('click',function(e){
-      e.stopPropagation();
-      loadScene(h.to);dimHint();
-    });
-    document.body.appendChild(el);
-  });
-}
-function updHS(){
-  document.querySelectorAll('.hs').forEach(function(el){
-    var hL=parseFloat(el.dataset.lon),hLt=parseFloat(el.dataset.lat);
-    var phi=(90-hLt)*D2R,th=hL*D2R;
-    var v=new THREE.Vector3(500*Math.sin(phi)*Math.cos(th),500*Math.cos(phi),500*Math.sin(phi)*Math.sin(th));
-    var cd=new THREE.Vector3();CAM.getWorldDirection(cd);
-    var dot=cd.dot(v.clone().normalize());
-    if(dot<0.15){el.style.opacity='0';el.style.pointerEvents='none';return;}
-    var p=v.clone().project(CAM);
-    el.style.left=((p.x*.5+.5)*window.innerWidth)+'px';
-    el.style.top=((p.y*-.5+.5)*window.innerHeight)+'px';
-    el.style.opacity=Math.min(1,(dot-.15)*3).toFixed(2);
-    el.style.pointerEvents=dot>.3?'all':'none';
-  });
-}
+
 
 // ── HINT ─────────────────────────────────────────────────────────────────────
 function dimHint(){if(!hintOff){hintOff=true;document.getElementById('hint').classList.add('hide');}}
@@ -434,7 +428,6 @@ function animate(){
   var phi=(90-lat)*D2R,th=lon*D2R;
   CAM.lookAt(500*Math.sin(phi)*Math.cos(th),500*Math.cos(phi),500*Math.sin(phi)*Math.sin(th));
   R.render(S,CAM);
-  updHS();
 }
 animate();
 
@@ -449,6 +442,55 @@ pi.onload=pi.onerror=function(){
   },600);
 };
 pi.src=SC[0].src;
+
+/* ── MUSIC ── */
+var audio = document.getElementById('audio');
+var mbtn  = document.getElementById('mbtn');
+var mvol  = document.getElementById('mvol');
+var playing = false;
+
+audio.volume = 0.4;
+
+mbtn.addEventListener('click', function(e){
+  e.stopPropagation();
+  if(playing){
+    audio.pause();
+    mbtn.textContent = '▶';
+    playing = false;
+  } else {
+    audio.play().then(function(){
+      mbtn.textContent = '⏸';
+      playing = true;
+    }).catch(function(){});
+  }
+});
+
+mvol.addEventListener('input', function(){
+  audio.volume = parseFloat(this.value);
+});
+
+// Auto-play after welcome screen
+document.getElementById('wbtn').addEventListener('click', function(){
+  setTimeout(function(){
+    audio.play().then(function(){
+      mbtn.textContent = '⏸';
+      playing = true;
+    }).catch(function(){});
+  }, 900);
+});
 </script>
+
+<!-- AUDIO -->
+<audio id="audio" loop preload="none">
+  <source src="musica.mp3" type="audio/mpeg">
+</audio>
+
+<!-- MUSIC CONTROLS -->
+<div id="music-ctrl">
+  <button id="mbtn" title="Play/Pause">▶</button>
+  <span id="mlbl">Jazz</span>
+  <input type="range" id="mvol" min="0" max="1" step="0.05" value="0.4">
+</div>
+
 </body>
 </html>
