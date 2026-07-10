@@ -95,23 +95,27 @@ body.uih #hideui{opacity:.3;}
   border-radius:20px;padding:5px 12px 5px 8px;
   backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
   transition:opacity .3s;
+  touch-action:none;
+  pointer-events:all;
 }
 body.uih #music-ctrl{opacity:0;pointer-events:none;}
 #mbtn{
-  width:26px;height:26px;border-radius:50%;
+  width:32px;height:32px;border-radius:50%;
   border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);
-  color:#fff;font-size:11px;cursor:pointer;
+  color:#fff;font-size:13px;cursor:pointer;
   display:flex;align-items:center;justify-content:center;flex-shrink:0;
   transition:background .15s;
+  touch-action:manipulation;
 }
 #mbtn:active{background:rgba(200,169,110,.35);border-color:#c8a96e;}
 #mvol{
   -webkit-appearance:none;appearance:none;
-  width:60px;height:3px;border-radius:2px;
+  width:70px;height:4px;border-radius:2px;
   background:rgba(255,255,255,.2);outline:none;cursor:pointer;
+  touch-action:none;
 }
 #mvol::-webkit-slider-thumb{
-  -webkit-appearance:none;width:12px;height:12px;
+  -webkit-appearance:none;width:16px;height:16px;
   border-radius:50%;background:#c8a96e;cursor:pointer;
 }
 #mlbl{color:rgba(255,255,255,.5);font-size:8px;letter-spacing:.1em;text-transform:uppercase;}
@@ -444,39 +448,49 @@ pi.onload=pi.onerror=function(){
 pi.src=SC[0].src;
 
 /* ── MUSIC ── */
-var audio = document.getElementById('audio');
-var mbtn  = document.getElementById('mbtn');
-var mvol  = document.getElementById('mvol');
+var audio   = document.getElementById('audio');
+var mbtn    = document.getElementById('mbtn');
+var mvol    = document.getElementById('mvol');
 var playing = false;
 
 audio.volume = 0.4;
 
-mbtn.addEventListener('click', function(e){
-  e.stopPropagation();
-  if(playing){
-    audio.pause();
-    mbtn.textContent = '▶';
-    playing = false;
-  } else {
-    audio.play().then(function(){
+function playAudio(){
+  audio.load();
+  var p = audio.play();
+  if(p !== undefined){
+    p.then(function(){
       mbtn.textContent = '⏸';
       playing = true;
-    }).catch(function(){});
+    }).catch(function(err){
+      console.log('Audio error:', err);
+    });
   }
-});
+}
 
-mvol.addEventListener('input', function(){
-  audio.volume = parseFloat(this.value);
-});
+function pauseAudio(){
+  audio.pause();
+  mbtn.textContent = '▶';
+  playing = false;
+}
+
+// Play/pause button — stop ALL propagation so it doesn't move the camera
+mbtn.addEventListener('click',    function(e){ e.stopPropagation(); playing ? pauseAudio() : playAudio(); });
+mbtn.addEventListener('touchend', function(e){ e.stopPropagation(); e.preventDefault(); playing ? pauseAudio() : playAudio(); }, {passive:false});
+
+// Volume slider — stop propagation so it doesn't pan the scene
+mvol.addEventListener('input',      function(e){ e.stopPropagation(); audio.volume = parseFloat(this.value); });
+mvol.addEventListener('touchstart', function(e){ e.stopPropagation(); }, {passive:true});
+mvol.addEventListener('touchmove',  function(e){ e.stopPropagation(); audio.volume = parseFloat(this.value); }, {passive:true});
+mvol.addEventListener('touchend',   function(e){ e.stopPropagation(); }, {passive:true});
+
+// Also stop propagation on the whole music control panel
+document.getElementById('music-ctrl').addEventListener('touchstart', function(e){ e.stopPropagation(); }, {passive:true});
+document.getElementById('music-ctrl').addEventListener('touchmove',  function(e){ e.stopPropagation(); e.preventDefault(); }, {passive:false});
 
 // Auto-play after welcome screen
 document.getElementById('wbtn').addEventListener('click', function(){
-  setTimeout(function(){
-    audio.play().then(function(){
-      mbtn.textContent = '⏸';
-      playing = true;
-    }).catch(function(){});
-  }, 900);
+  setTimeout(function(){ playAudio(); }, 900);
 });
 </script>
 
