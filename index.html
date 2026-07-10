@@ -37,6 +37,68 @@ canvas:active{cursor:grabbing;}
 #watermark{position:fixed;bottom:110px;right:14px;z-index:12;pointer-events:none;}
 #watermark img{height:40px;width:auto;opacity:.18;display:block;}
 
+
+/* WELCOME SCREEN */
+#welcome{
+  position:fixed;inset:0;z-index:60;
+  background:#0a0b0d;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;
+  transition:opacity .8s;
+}
+#welcome.done{opacity:0;pointer-events:none;}
+#welcome-logo{height:90px;width:auto;margin-bottom:24px;filter:drop-shadow(0 4px 20px rgba(200,169,110,.3));}
+#welcome-proyecto{
+  color:#c8a96e;font-size:10px;letter-spacing:.35em;text-transform:uppercase;
+  margin-bottom:8px;
+}
+#welcome-nombre{
+  color:#fff;font-size:32px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  margin-bottom:6px;
+}
+#welcome-cliente{
+  color:rgba(255,255,255,.45);font-size:12px;letter-spacing:.25em;text-transform:uppercase;
+  margin-bottom:40px;
+}
+#welcome-btn{
+  background:transparent;border:1px solid rgba(200,169,110,.6);
+  border-radius:30px;padding:12px 36px;
+  color:#c8a96e;font-size:10px;letter-spacing:.25em;text-transform:uppercase;
+  cursor:pointer;transition:background .2s,border-color .2s,color .2s;
+}
+#welcome-btn:hover,#welcome-btn:active{
+  background:rgba(200,169,110,.15);border-color:#c8a96e;color:#fff;
+}
+#welcome-line{
+  width:40px;height:1px;background:rgba(200,169,110,.4);margin-bottom:40px;
+}
+
+/* SCENE NAME FLOATING */
+#scene-name-float{
+  position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 88px);
+  left:50%;transform:translateX(-50%);
+  z-index:19;pointer-events:none;
+  color:rgba(255,255,255,.7);font-size:10px;letter-spacing:.22em;text-transform:uppercase;
+  text-shadow:0 1px 8px rgba(0,0,0,.8);
+  transition:opacity .4s;
+}
+
+/* HOTSPOT PREVIEW */
+#hs-preview{
+  position:fixed;z-index:22;
+  background:rgba(10,11,13,.9);border:1px solid rgba(200,169,110,.35);
+  border-radius:10px;overflow:hidden;
+  width:130px;
+  pointer-events:none;
+  opacity:0;transition:opacity .25s;
+  transform:translate(-50%,-120%);
+}
+#hs-preview.show{opacity:1;}
+#hs-preview img{width:100%;height:72px;object-fit:cover;display:block;}
+#hs-preview-label{
+  color:#c8a96e;font-size:8px;letter-spacing:.15em;text-transform:uppercase;
+  padding:5px 8px;text-align:center;
+}
+
 /* HIDE UI MODE */
 body.ui-hidden #header,
 body.ui-hidden #bottom,
@@ -112,6 +174,26 @@ body.ui-hidden #btn-hide{
 <body>
 <canvas id="canvas"></canvas>
 
+<!-- WELCOME SCREEN -->
+<div id="welcome">
+  <img id="welcome-logo" src="logo.png" alt="Logo">
+  <div id="welcome-proyecto">Recorrido Virtual 360°</div>
+  <div id="welcome-nombre">La Rioja</div>
+  <div id="welcome-cliente">Presentado a: Héctor</div>
+  <div id="welcome-line"></div>
+  <button id="welcome-btn">Iniciar recorrido</button>
+</div>
+
+<!-- SCENE NAME FLOAT -->
+<div id="scene-name-float">Área Asador</div>
+
+<!-- HOTSPOT PREVIEW -->
+<div id="hs-preview">
+  <img id="hs-preview-img" src="" alt="">
+  <div id="hs-preview-label"></div>
+</div>
+
+
 <div id="loader">
   <div id="loader-logo-wrap"><img src="logo.png" alt="Logo"></div>
   <div id="loader-bar-wrap"><div id="loader-bar"></div></div>
@@ -138,6 +220,7 @@ body.ui-hidden #btn-hide{
   <button class="fbtn" id="btn-gyro">
     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M6.3 6.3a8 8 0 1 0 11.4 0"/><path d="M12 2v4M12 18v4"/></svg>
   </button>
+  <button class="fbtn" id="btn-reset" title="Resetear vista">&#x2302;</button>
   <button class="fbtn" id="btn-cal" title="Calibrar giroscopio">&#x25CE;</button>
   <button class="fbtn" id="btn-share">
     <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="2"/><circle cx="6" cy="12" r="2"/><circle cx="18" cy="19" r="2"/><path d="M8 13.5l8 4M16 6.5l-8 4"/></svg>
@@ -211,6 +294,7 @@ function loadScene(idx, startLon){
 
   document.querySelectorAll('.tb').forEach(function(t,j){t.classList.toggle('active',j===idx);});
   document.getElementById('scene-pill').textContent=(idx+1)+' / '+SCENES.length;
+  document.getElementById('scene-name-float').textContent=SCENES[idx].label;
 
   texLoader.load(SCENES[idx].src, function(tex){
     tex.minFilter=THREE.LinearFilter; tex.magFilter=THREE.LinearFilter;
@@ -393,9 +477,33 @@ function createHotspots(sceneIdx){
     el.innerHTML='<div class="hs-ring"><div class="hs-dot"></div></div><div class="hs-label">'+h.label+'</div>';
     el.addEventListener('click',function(e){
       e.stopPropagation();
+      document.getElementById('hs-preview').classList.remove('show');
       loadScene(parseInt(el.dataset.target));
       dismissHint();
     });
+    el.addEventListener('mouseenter',function(){
+      var prev=document.getElementById('hs-preview');
+      var rect=el.getBoundingClientRect();
+      document.getElementById('hs-preview-img').src=SCENES[h.targetScene].src;
+      document.getElementById('hs-preview-label').textContent=h.label;
+      prev.style.left=rect.left+'px';
+      prev.style.top=rect.top+'px';
+      prev.classList.add('show');
+    });
+    el.addEventListener('mouseleave',function(){
+      document.getElementById('hs-preview').classList.remove('show');
+    });
+    // Touch preview
+    el.addEventListener('touchstart',function(){
+      var prev=document.getElementById('hs-preview');
+      var rect=el.getBoundingClientRect();
+      document.getElementById('hs-preview-img').src=SCENES[h.targetScene].src;
+      document.getElementById('hs-preview-label').textContent=h.label;
+      prev.style.left=rect.left+'px';
+      prev.style.top=rect.top+'px';
+      prev.classList.add('show');
+      setTimeout(function(){prev.classList.remove('show');},1800);
+    },{passive:true});
     document.body.appendChild(el);
   });
 }
@@ -423,6 +531,20 @@ function updateHotspots(){
     el.style.top=sy+'px';
   });
 }
+
+
+/* ── WELCOME ── */
+document.getElementById('welcome-btn').addEventListener('click',function(){
+  var w=document.getElementById('welcome');
+  w.classList.add('done');
+  setTimeout(function(){w.style.display='none';},900);
+});
+
+/* ── RESET VIEW ── */
+document.getElementById('btn-reset').addEventListener('click',function(){
+  lon=0; lat=0; fov=75;
+  camera.fov=fov; camera.updateProjectionMatrix();
+});
 
 /* ── CALIBRATE GYRO ── */
 document.getElementById('btn-cal').addEventListener('click',function(){
