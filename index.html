@@ -284,7 +284,13 @@ var downX=0, downY=0;
 var DEG2RAD = Math.PI/180;
 
 function wrapDelta(d){while(d>180)d-=360;while(d<-180)d+=360;return d;}
-window.addEventListener('deviceorientation',function(e){rawAlpha=e.alpha||0;rawBeta=e.beta||0;rawGamma=e.gamma||0;},true);
+// Android needs deviceorientationabsolute, iOS uses deviceorientation
+function onOrientEvt(e){
+  if(e.alpha===null && e.beta===null) return; // ignore empty events
+  rawAlpha=e.alpha||0; rawBeta=e.beta||0; rawGamma=e.gamma||0;
+}
+window.addEventListener('deviceorientationabsolute', onOrientEvt, true);
+window.addEventListener('deviceorientation', onOrientEvt, true);
 
 // ── LOAD SCENE ─────────────────────────────────────────────────────────────
 function loadScene(idx, startLon){
@@ -371,14 +377,38 @@ document.getElementById('btn-fs').addEventListener('click',function(){if(!docume
 document.addEventListener('fullscreenchange',function(){if(!document.fullscreenElement)document.getElementById('btn-fs').textContent='⛶';setTimeout(function(){renderer.setSize(window.innerWidth,window.innerHeight);camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();},150);});
 
 // ── GYRO ───────────────────────────────────────────────────────────────────
-function startGyro(){
+function _activateGyro(){
   gyroOn=true;
-  // Auto-calibrate on start: current orientation = forward
   calAlpha=rawAlpha; calBeta=rawBeta; calGamma=rawGamma;
   gyroCalibrated=true;
   document.getElementById('btn-gyro').classList.add('on');
   document.getElementById('gyrind').classList.add('on');
   dismissHint();
+}
+function startGyro(){
+  // iOS 13+ permission
+  if(typeof DeviceOrientationEvent!=='undefined' && typeof DeviceOrientationEvent.requestPermission==='function'){
+    DeviceOrientationEvent.requestPermission().then(function(s){
+      if(s==='granted') _activateGyro();
+      else alert('Permiso denegado. Actívalo en Ajustes > Safari.');
+    }).catch(function(err){alert('Error: '+err);});
+  } else {
+    // Android / others — check if sensor actually works
+    var testHandler=function(e){
+      window.removeEventListener('deviceorientation', testHandler, true);
+      window.removeEventListener('deviceorientationabsolute', testHandler, true);
+      if(e.alpha!==null){ _activateGyro(); }
+      else { alert('Giroscopio no disponible en este dispositivo.'); }
+    };
+    window.addEventListener('deviceorientation', testHandler, true);
+    window.addEventListener('deviceorientationabsolute', testHandler, true);
+    // Fallback if no event fires in 500ms
+    setTimeout(function(){
+      window.removeEventListener('deviceorientation', testHandler, true);
+      window.removeEventListener('deviceorientationabsolute', testHandler, true);
+      if(!gyroOn) _activateGyro(); // try anyway
+    }, 500);
+  }
 }
 function stopGyro(){
   gyroOn=false;gyroCalibrated=false;
@@ -386,10 +416,8 @@ function stopGyro(){
   document.getElementById('gyrind').classList.remove('on');
 }
 document.getElementById('btn-gyro').addEventListener('click',function(){
-  if(gyroOn){stopGyro();return;}
-  if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function'){
-    DeviceOrientationEvent.requestPermission().then(function(s){if(s==='granted')startGyro();else alert('Permiso denegado. Actívalo en Ajustes > Safari.');}).catch(function(){});
-  }else{startGyro();}
+  if(gyroOn){ stopGyro(); return; }
+  startGyro();
 });
 
 // ── SHARE ──────────────────────────────────────────────────────────────────
