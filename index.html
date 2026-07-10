@@ -3,610 +3,452 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Recorrido Virtual 360° · Arq. Francisco Valenzuela</title>
+<title>La Rioja · Arq. Francisco Valenzuela</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 html,body{width:100%;height:100%;overflow:hidden;background:#0a0b0d;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
-canvas{display:block;width:100%;height:100%;position:fixed;top:0;left:0;touch-action:none;cursor:grab;}
-canvas:active{cursor:grabbing;}
+canvas{display:block;width:100%;height:100%;position:fixed;top:0;left:0;touch-action:none;}
+
+/* WELCOME */
+#welcome{position:fixed;inset:0;z-index:60;background:#0a0b0d;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;transition:opacity .8s;}
+#welcome.hide{opacity:0;pointer-events:none;}
+#wlogo{height:80px;width:auto;margin-bottom:22px;}
+#wprj{color:#c8a96e;font-size:9px;letter-spacing:.35em;text-transform:uppercase;margin-bottom:8px;}
+#wnom{color:#fff;font-size:28px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;}
+#wcli{color:rgba(255,255,255,.4);font-size:11px;letter-spacing:.2em;text-transform:uppercase;margin-bottom:36px;}
+#wline{width:36px;height:1px;background:rgba(200,169,110,.4);margin-bottom:36px;}
+#wbtn{background:transparent;border:1px solid rgba(200,169,110,.5);border-radius:30px;padding:11px 34px;color:#c8a96e;font-size:9px;letter-spacing:.25em;text-transform:uppercase;cursor:pointer;}
+#wbtn:active{background:rgba(200,169,110,.15);}
 
 /* HEADER */
-#header{position:fixed;top:0;left:0;right:0;z-index:20;padding-top:env(safe-area-inset-top,0px);background:linear-gradient(to bottom,rgba(8,9,12,.55) 50%,transparent);pointer-events:none;}
-#header-inner{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 16px 22px;}
-#logo-img{height:110px;width:auto;object-fit:contain;display:block;filter:drop-shadow(0 2px 10px rgba(0,0,0,.4));opacity:.7;}
-#header-name{color:#fff;font-size:11px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;opacity:.55;}
-#scene-pill{position:fixed;top:calc(env(safe-area-inset-top,0px) + 10px);right:14px;background:rgba(200,169,110,.12);border:1px solid rgba(200,169,110,.3);border-radius:20px;padding:4px 11px;color:#c8a96e;font-size:9px;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;}
+#hdr{position:fixed;top:0;left:0;right:0;z-index:20;padding-top:env(safe-area-inset-top,0px);background:linear-gradient(to bottom,rgba(8,9,12,.55) 50%,transparent);pointer-events:none;}
+#hdr-in{display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 16px 20px;}
+#hlogo{height:110px;width:auto;object-fit:contain;opacity:.7;filter:drop-shadow(0 2px 8px rgba(0,0,0,.4));}
+#hname{color:#fff;font-size:10px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;opacity:.55;}
+#spill{position:fixed;top:calc(env(safe-area-inset-top,0px) + 10px);right:14px;z-index:21;background:rgba(200,169,110,.12);border:1px solid rgba(200,169,110,.3);border-radius:20px;padding:4px 10px;color:#c8a96e;font-size:9px;letter-spacing:.1em;text-transform:uppercase;pointer-events:none;}
 
-/* HINT */
-#hint{position:fixed;top:50%;left:50%;z-index:15;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:10px;pointer-events:none;transition:opacity .9s;}
-#hint.hidden{opacity:0;}
-#hint-ring{width:58px;height:58px;border-radius:50%;border:2px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;animation:pulse 2.2s ease-in-out infinite;}
-#hint-ring svg{width:28px;height:28px;stroke:rgba(255,255,255,.75);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;}
-#hint-txt{color:rgba(255,255,255,.5);font-size:10px;letter-spacing:.18em;text-transform:uppercase;text-align:center;}
-@keyframes pulse{0%,100%{transform:scale(1);opacity:.6;}50%{transform:scale(1.08);opacity:1;}}
-
-/* HOTSPOTS */
-.hs{position:fixed;transform:translate(-50%,-50%);z-index:11;cursor:pointer;pointer-events:all;display:flex;flex-direction:column;align-items:center;gap:5px;}
-.hs-ring{width:42px;height:42px;border-radius:50%;border:2px solid rgba(255,255,255,.9);background:rgba(255,255,255,.15);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;animation:hspulse 2s ease-in-out infinite;transition:transform .15s,background .15s;}
-.hs:active .hs-ring{transform:scale(.88);background:rgba(200,169,110,.5);}
-.hs-dot{width:10px;height:10px;border-radius:50%;background:white;}
-.hs-label{background:rgba(8,9,12,.78);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:3px 9px;color:#fff;font-size:9px;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;pointer-events:none;}
-@keyframes hspulse{0%{box-shadow:0 0 0 0 rgba(255,255,255,.5);}70%{box-shadow:0 0 0 12px rgba(255,255,255,0);}100%{box-shadow:0 0 0 0 rgba(255,255,255,0);}}
-
-/* WATERMARK */
-#watermark{position:fixed;bottom:110px;right:14px;z-index:12;pointer-events:none;}
-#watermark img{height:40px;width:auto;opacity:.18;display:block;}
-
-
-/* WELCOME SCREEN */
-#welcome{
-  position:fixed;inset:0;z-index:60;
-  background:#0a0b0d;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;
-  transition:opacity .8s;
-}
-#welcome.done{opacity:0;pointer-events:none;}
-#welcome-logo{height:90px;width:auto;margin-bottom:24px;filter:drop-shadow(0 4px 20px rgba(200,169,110,.3));}
-#welcome-proyecto{
-  color:#c8a96e;font-size:10px;letter-spacing:.35em;text-transform:uppercase;
-  margin-bottom:8px;
-}
-#welcome-nombre{
-  color:#fff;font-size:32px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
-  margin-bottom:6px;
-}
-#welcome-cliente{
-  color:rgba(255,255,255,.45);font-size:12px;letter-spacing:.25em;text-transform:uppercase;
-  margin-bottom:40px;
-}
-#welcome-btn{
-  background:transparent;border:1px solid rgba(200,169,110,.6);
-  border-radius:30px;padding:12px 36px;
-  color:#c8a96e;font-size:10px;letter-spacing:.25em;text-transform:uppercase;
-  cursor:pointer;transition:background .2s,border-color .2s,color .2s;
-}
-#welcome-btn:hover,#welcome-btn:active{
-  background:rgba(200,169,110,.15);border-color:#c8a96e;color:#fff;
-}
-#welcome-line{
-  width:40px;height:1px;background:rgba(200,169,110,.4);margin-bottom:40px;
-}
-
-/* SCENE NAME FLOATING */
-#scene-name-float{
-  position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 88px);
-  left:50%;transform:translateX(-50%);
-  z-index:19;pointer-events:none;
-  color:rgba(255,255,255,.7);font-size:10px;letter-spacing:.22em;text-transform:uppercase;
-  text-shadow:0 1px 8px rgba(0,0,0,.8);
-  transition:opacity .4s;
-}
-
-/* HOTSPOT PREVIEW */
-#hs-preview{
-  position:fixed;z-index:22;
-  background:rgba(10,11,13,.9);border:1px solid rgba(200,169,110,.35);
-  border-radius:10px;overflow:hidden;
-  width:130px;
-  pointer-events:none;
-  opacity:0;transition:opacity .25s;
-  transform:translate(-50%,-120%);
-}
-#hs-preview.show{opacity:1;}
-#hs-preview img{width:100%;height:72px;object-fit:cover;display:block;}
-#hs-preview-label{
-  color:#c8a96e;font-size:8px;letter-spacing:.15em;text-transform:uppercase;
-  padding:5px 8px;text-align:center;
-}
-
-/* HIDE UI MODE */
-body.ui-hidden #header,
-body.ui-hidden #bottom,
-body.ui-hidden #floats,
-body.ui-hidden #watermark,
-body.ui-hidden #autoind,
-body.ui-hidden #gyrind,
-body.ui-hidden .hs{
-  opacity:0;pointer-events:none;transition:opacity .3s;
-}
-body.ui-hidden #btn-hide{
-  opacity:.35 !important;pointer-events:all !important;
-}
-
-/* HIDE BUTTON */
-#btn-hide{
-  position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 10px);left:50%;
-  transform:translateX(-50%);z-index:30;
-  background:rgba(8,9,12,.65);border:1px solid rgba(255,255,255,.2);
-  border-radius:20px;padding:6px 16px;
-  color:rgba(255,255,255,.6);font-size:9px;letter-spacing:.18em;text-transform:uppercase;
-  cursor:pointer;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
-  transition:opacity .3s;white-space:nowrap;
-}
-#btn-hide:active{background:rgba(200,169,110,.25);border-color:#c8a96e;color:#c8a96e;}
-
-
+/* SCENE NAME */
+#sname{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 88px);left:50%;transform:translateX(-50%);z-index:19;color:rgba(255,255,255,.65);font-size:9px;letter-spacing:.22em;text-transform:uppercase;text-shadow:0 1px 8px rgba(0,0,0,.9);pointer-events:none;}
 
 /* BOTTOM */
-#bottom{position:fixed;bottom:0;left:0;right:0;z-index:20;padding-bottom:env(safe-area-inset-bottom,0px);background:linear-gradient(to top,rgba(8,9,12,.93) 65%,transparent);}
-#bottom-inner{display:flex;align-items:flex-end;gap:10px;padding:20px 14px 18px;}
+#bot{position:fixed;bottom:0;left:0;right:0;z-index:20;padding-bottom:env(safe-area-inset-bottom,0px);background:linear-gradient(to top,rgba(8,9,12,.93) 60%,transparent);}
+#bot-in{display:flex;align-items:flex-end;gap:10px;padding:18px 14px 16px;}
 #thumbs{display:flex;gap:8px;flex-shrink:0;}
 .tw{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;}
-.tb{width:68px;height:42px;border-radius:6px;overflow:hidden;border:2px solid rgba(255,255,255,.12);transition:border-color .2s,transform .15s;}
-.tb:active{transform:scale(.94);}
-.tb.active{border-color:#c8a96e;box-shadow:0 0 10px rgba(200,169,110,.45);}
+.tb{width:68px;height:40px;border-radius:6px;overflow:hidden;border:2px solid rgba(255,255,255,.12);transition:border-color .2s;}
+.tb.active{border-color:#c8a96e;}
 .tb img{width:100%;height:100%;object-fit:cover;display:block;}
-.tn{color:rgba(184,189,198,.5);font-size:7px;letter-spacing:.1em;text-transform:uppercase;text-align:center;max-width:68px;}
-#spacer-b{flex:1;}
-#ctrl-col{display:flex;flex-direction:column;align-items:center;gap:5px;flex-shrink:0;}
-#ctrl-lbl{color:rgba(184,189,198,.35);font-size:8px;letter-spacing:.13em;text-transform:uppercase;}
-#zoom-row{display:flex;gap:6px;}
-.zbtn{width:28px;height:28px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.07);color:#b8bdc6;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s,border-color .15s;}
-.zbtn:active{background:rgba(200,169,110,.25);border-color:#c8a96e;color:#c8a96e;}
+.tn{color:rgba(184,189,198,.5);font-size:7px;letter-spacing:.1em;text-transform:uppercase;}
+#sb{flex:1;}
+#zc{display:flex;flex-direction:column;align-items:center;gap:5px;}
+#zlbl{color:rgba(184,189,198,.35);font-size:8px;letter-spacing:.13em;text-transform:uppercase;}
+#zr{display:flex;gap:6px;}
+.zb{width:28px;height:28px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.07);color:#b8bdc6;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.zb:active{background:rgba(200,169,110,.25);border-color:#c8a96e;color:#c8a96e;}
 
 /* FLOAT BUTTONS */
-#floats{position:fixed;z-index:21;top:0;right:0;padding-top:calc(env(safe-area-inset-top,0px) + 175px);padding-right:14px;display:flex;flex-direction:column;gap:5px;}
-.fbtn{width:28px;height:28px;border-radius:7px;border:1px solid rgba(255,255,255,.18);background:rgba(8,9,12,.72);color:#b8bdc6;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:background .15s,border-color .15s,color .15s;}
-.fbtn.on,.fbtn:active{background:rgba(200,169,110,.25);border-color:#c8a96e;color:#c8a96e;}
-.fbtn svg{width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;}
+#floats{position:fixed;z-index:21;top:0;right:0;padding-top:calc(env(safe-area-inset-top,0px) + 155px);padding-right:14px;display:flex;flex-direction:column;gap:5px;}
+.fb{width:28px;height:28px;border-radius:7px;border:1px solid rgba(255,255,255,.18);background:rgba(8,9,12,.72);color:#b8bdc6;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);}
+.fb.on,.fb:active{background:rgba(200,169,110,.25);border-color:#c8a96e;color:#c8a96e;}
+.fb svg{width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;}
 
 /* INDICATORS */
 .ind{position:fixed;left:50%;z-index:25;bottom:calc(env(safe-area-inset-bottom,0px) + 100px);transform:translateX(-50%);border-radius:20px;padding:4px 12px;font-size:9px;letter-spacing:.13em;text-transform:uppercase;opacity:0;transition:opacity .4s;pointer-events:none;white-space:nowrap;}
-#autoind{background:rgba(200,169,110,.16);border:1px solid rgba(200,169,110,.35);color:#c8a96e;}
-#gyrind{background:rgba(80,160,255,.14);border:1px solid rgba(80,160,255,.35);color:rgba(130,200,255,.9);}
-#calind{background:rgba(255,200,80,.14);border:1px solid rgba(255,200,80,.35);color:rgba(255,220,100,.9);}
+#aind{background:rgba(200,169,110,.16);border:1px solid rgba(200,169,110,.35);color:#c8a96e;}
+#gind{background:rgba(80,160,255,.14);border:1px solid rgba(80,160,255,.35);color:rgba(130,200,255,.9);}
+#cind{background:rgba(255,200,80,.14);border:1px solid rgba(255,200,80,.35);color:rgba(255,220,100,.9);}
 .ind.on{opacity:1;}
 
 /* SHARE TOAST */
-#share-toast{position:fixed;left:50%;z-index:30;top:calc(env(safe-area-inset-top,0px) + 170px);transform:translateX(-50%) translateY(-20px);background:rgba(20,22,28,.96);border:1px solid rgba(200,169,110,.4);border-radius:12px;padding:10px 18px;color:#fff;font-size:12px;opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;white-space:nowrap;backdrop-filter:blur(12px);}
-#share-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+#stst{position:fixed;left:50%;z-index:30;top:calc(env(safe-area-inset-top,0px) + 170px);transform:translateX(-50%) translateY(-20px);background:rgba(20,22,28,.96);border:1px solid rgba(200,169,110,.4);border-radius:12px;padding:10px 18px;color:#fff;font-size:12px;opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;white-space:nowrap;}
+#stst.on{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* HIDE UI */
+#hideui{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 10px);left:50%;transform:translateX(-50%);z-index:30;background:rgba(8,9,12,.65);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:6px 16px;color:rgba(255,255,255,.6);font-size:9px;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;}
+body.uih #hdr,body.uih #bot,body.uih #floats,body.uih #sname,body.uih #aind,body.uih #gind,body.uih .hs{opacity:0;pointer-events:none;}
+body.uih #hideui{opacity:.3;}
+
+/* HOTSPOTS */
+.hs{position:fixed;transform:translate(-50%,-50%);z-index:11;cursor:pointer;pointer-events:all;display:flex;flex-direction:column;align-items:center;gap:5px;transition:opacity .3s;}
+.hs-r{width:40px;height:40px;border-radius:50%;border:2px solid rgba(255,255,255,.9);background:rgba(255,255,255,.15);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;animation:hsp 2s ease-in-out infinite;}
+.hs-d{width:10px;height:10px;border-radius:50%;background:white;}
+.hs-l{background:rgba(8,9,12,.8);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:3px 8px;color:#fff;font-size:8px;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;pointer-events:none;}
+@keyframes hsp{0%{box-shadow:0 0 0 0 rgba(255,255,255,.5);}70%{box-shadow:0 0 0 12px rgba(255,255,255,0);}100%{box-shadow:0 0 0 0 rgba(255,255,255,0);}}
+
+/* HINT */
+#hint{position:fixed;top:50%;left:50%;z-index:15;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:10px;pointer-events:none;transition:opacity .9s;}
+#hint.hide{opacity:0;}
+#hint-r{width:56px;height:56px;border-radius:50%;border:2px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;animation:pulse 2.2s ease-in-out infinite;}
+#hint-r svg{width:26px;height:26px;stroke:rgba(255,255,255,.7);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;}
+#hint-t{color:rgba(255,255,255,.5);font-size:10px;letter-spacing:.18em;text-transform:uppercase;}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:.6;}50%{transform:scale(1.08);opacity:1;}}
 
 /* LOADER */
-#loader{position:fixed;inset:0;z-index:50;background:#0a0b0d;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .7s;}
-#loader.done{opacity:0;pointer-events:none;}
-#loader-logo-wrap{padding:20px 40px;border-radius:16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);margin-bottom:4px;}
-#loader-logo-wrap img{height:110px;width:auto;display:block;}
-#loader-bar-wrap{width:160px;height:2px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden;margin-top:4px;}
-#loader-bar{height:100%;background:#c8a96e;width:0%;transition:width .35s ease;}
-#loader-sub{color:rgba(184,189,198,.4);font-size:9px;letter-spacing:.18em;text-transform:uppercase;}
+#ldr{position:fixed;inset:0;z-index:55;background:#0a0b0d;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;transition:opacity .6s;}
+#ldr.hide{opacity:0;pointer-events:none;}
+#llw{padding:16px 30px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);}
+#llw img{height:60px;width:auto;display:block;}
+#lbw{width:140px;height:2px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden;}
+#lb{height:100%;background:#c8a96e;width:0%;transition:width .3s;}
+#lsub{color:rgba(184,189,198,.4);font-size:9px;letter-spacing:.18em;text-transform:uppercase;}
 </style>
 </head>
 <body>
-<canvas id="canvas"></canvas>
 
-<!-- WELCOME SCREEN -->
+<!-- LOADER -->
+<div id="ldr">
+  <div id="llw"><img src="logo.png" alt=""></div>
+  <div id="lbw"><div id="lb"></div></div>
+  <div id="lsub">Cargando recorrido 360°…</div>
+</div>
+
+<!-- WELCOME -->
 <div id="welcome">
-  <img id="welcome-logo" src="logo.png" alt="Logo">
-  <div id="welcome-proyecto">Recorrido Virtual 360°</div>
-  <div id="welcome-nombre">La Rioja</div>
-  <div id="welcome-cliente">Presentado a: Héctor</div>
-  <div id="welcome-line"></div>
-  <button id="welcome-btn">Iniciar recorrido</button>
+  <img id="wlogo" src="logo.png" alt="">
+  <div id="wprj">Recorrido Virtual 360°</div>
+  <div id="wnom">La Rioja</div>
+  <div id="wcli">Presentado a: Héctor</div>
+  <div id="wline"></div>
+  <button id="wbtn">Iniciar recorrido</button>
 </div>
 
-<!-- SCENE NAME FLOAT -->
-<div id="scene-name-float">Área Asador</div>
+<canvas id="cv"></canvas>
 
-<!-- HOTSPOT PREVIEW -->
-<div id="hs-preview">
-  <img id="hs-preview-img" src="" alt="">
-  <div id="hs-preview-label"></div>
-</div>
-
-
-<div id="loader">
-  <div id="loader-logo-wrap"><img src="logo.png" alt="Logo"></div>
-  <div id="loader-bar-wrap"><div id="loader-bar"></div></div>
-  <div id="loader-sub">Cargando recorrido 360°…</div>
-</div>
-
-<div id="header">
-  <div id="header-inner">
-    <img id="logo-img" src="logo.png" alt="Logo">
-    <div id="header-name">Arq. Francisco Valenzuela</div>
+<!-- HEADER -->
+<div id="hdr">
+  <div id="hdr-in">
+    <img id="hlogo" src="logo.png" alt="">
+    <div id="hname">Arq. Francisco Valenzuela</div>
   </div>
 </div>
-<div id="scene-pill">1 / 3</div>
+<div id="spill">1 / 3</div>
+<div id="sname">Área Asador</div>
 
-<div id="watermark"><img src="logo.png" alt=""></div>
+<!-- HINT -->
 <div id="hint">
-  <div id="hint-ring"><svg viewBox="0 0 24 24"><path d="M8 12h8M4 8l4 4-4 4M20 8l-4 4 4 4"/></svg></div>
-  <div id="hint-txt">Arrastra para explorar</div>
+  <div id="hint-r"><svg viewBox="0 0 24 24"><path d="M8 12h8M4 8l4 4-4 4M20 8l-4 4 4 4"/></svg></div>
+  <div id="hint-t">Arrastra para explorar</div>
 </div>
 
+<!-- FLOAT BUTTONS -->
 <div id="floats">
-  <button class="fbtn" id="btn-fs">&#x26F6;</button>
-  <button class="fbtn" id="btn-auto">&#8635;</button>
-  <button class="fbtn" id="btn-gyro">
-    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M6.3 6.3a8 8 0 1 0 11.4 0"/><path d="M12 2v4M12 18v4"/></svg>
-  </button>
-  <button class="fbtn" id="btn-reset" title="Resetear vista">&#x2302;</button>
-  <button class="fbtn" id="btn-cal" title="Calibrar giroscopio">&#x25CE;</button>
-  <button class="fbtn" id="btn-share">
-    <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="2"/><circle cx="6" cy="12" r="2"/><circle cx="18" cy="19" r="2"/><path d="M8 13.5l8 4M16 6.5l-8 4"/></svg>
-  </button>
+  <button class="fb" id="bfs">&#x26F6;</button>
+  <button class="fb" id="bauto">&#8635;</button>
+  <button class="fb" id="bgyro"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M6.3 6.3a8 8 0 1 0 11.4 0"/><path d="M12 2v4M12 18v4"/></svg></button>
+  <button class="fb" id="bcal">&#x25CE;</button>
+  <button class="fb" id="breset">&#x2302;</button>
+  <button class="fb" id="bshare"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="2"/><circle cx="6" cy="12" r="2"/><circle cx="18" cy="19" r="2"/><path d="M8 13.5l8 4M16 6.5l-8 4"/></svg></button>
 </div>
 
-<div class="ind" id="autoind">● Auto-rotando</div>
-<div class="ind" id="gyrind">● Giroscopio activo</div>
-<div class="ind" id="calind">✓ Calibrado</div>
-<div id="share-toast">✓ Link copiado</div>
-<button id="btn-hide">&#x25BC; Ocultar UI</button>
+<!-- INDICATORS -->
+<div class="ind" id="aind">● Auto-rotando</div>
+<div class="ind" id="gind">● Giroscopio activo</div>
+<div class="ind" id="cind">✓ Calibrado</div>
 
-<div id="bottom">
-  <div id="bottom-inner">
+<!-- SHARE TOAST -->
+<div id="stst">✓ Link copiado</div>
+
+<!-- BOTTOM -->
+<div id="bot">
+  <div id="bot-in">
     <div id="thumbs"></div>
-    <div id="spacer-b"></div>
-    <div id="ctrl-col">
-      <div id="ctrl-lbl">Zoom</div>
-      <div id="zoom-row">
-        <div class="zbtn" id="btn-zout">&#8722;</div>
-        <div class="zbtn" id="btn-zin">+</div>
+    <div id="sb"></div>
+    <div id="zc">
+      <div id="zlbl">Zoom</div>
+      <div id="zr">
+        <div class="zb" id="bzout">&#8722;</div>
+        <div class="zb" id="bzin">+</div>
       </div>
     </div>
   </div>
 </div>
 
+<!-- HIDE UI -->
+<button id="hideui">&#9660; Ocultar UI</button>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-// ── ESCENAS + HOTSPOTS ─────────────────────────────────────────────────────
-// Hotspot position: lon/lat en grados dentro de la esfera actual
-// targetScene: índice de la escena a la que lleva
-var SCENES = [
-  {src:'escena1.jpg', label:'Área Asador', thumb:'Asador'},
-  {src:'escena2.jpg', label:'Alberca',     thumb:'Alberca'},
-  {src:'escena3.jpg', label:'Jardín',      thumb:'Jardín'}
+// ── SCENES ──────────────────────────────────────────────────────────────────
+var SC=[
+  {src:'escena1.jpg',label:'Área Asador',thumb:'Asador',
+   hs:[{lon:30,lat:-8,to:2,lbl:'Jardín'},{lon:65,lat:-8,to:1,lbl:'Alberca'}]},
+  {src:'escena2.jpg',label:'Alberca',thumb:'Alberca',
+   hs:[{lon:355,lat:-12,to:0,lbl:'Asador'},{lon:18,lat:-12,to:2,lbl:'Jardín'}]},
+  {src:'escena3.jpg',label:'Jardín',thumb:'Jardín',
+   hs:[{lon:320,lat:-10,to:1,lbl:'Alberca'},{lon:15,lat:-10,to:0,lbl:'Asador'}]}
 ];
 
-// ── THREE.JS ───────────────────────────────────────────────────────────────
-var canvas   = document.getElementById('canvas');
-var renderer = new THREE.WebGLRenderer({canvas:canvas, antialias:true});
-renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
-renderer.setSize(window.innerWidth, window.innerHeight);
+// ── THREE ────────────────────────────────────────────────────────────────────
+var cv=document.getElementById('cv');
+var R=new THREE.WebGLRenderer({canvas:cv,antialias:true});
+R.setPixelRatio(Math.min(window.devicePixelRatio,2));
+R.setSize(window.innerWidth,window.innerHeight);
+var S=new THREE.Scene();
+var CAM=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,1000);
+var geo=new THREE.SphereGeometry(500,72,36); geo.scale(-1,1,1);
+var mesh=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:0x111111}));
+S.add(mesh);
+var TL=new THREE.TextureLoader();
+var D2R=Math.PI/180;
 
-var scene3  = new THREE.Scene();
-var camera  = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-var geo     = new THREE.SphereGeometry(500,72,36);
-geo.scale(-1,1,1);
-var mesh    = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({color:0x111111}));
-scene3.add(mesh);
-var texLoader = new THREE.TextureLoader();
+// ── STATE ────────────────────────────────────────────────────────────────────
+var lon=0,lat=0,fov=75,curIdx=0;
+var autoRot=false,hintOff=false,uiHid=false;
 
-// ── STATE ──────────────────────────────────────────────────────────────────
-var lon=0, lat=0, fov=75;
-var dragging=false, lx=0, ly=0;
-var autoRot=false, hintOff=false, pinch0=0;
-var gyroOn=false, rawAlpha=0, rawBeta=0, rawGamma=0;
-var prevAlpha=null, prevBeta=null, prevGamma=null;
-var currentSceneIdx = 0;
-var moveThreshold = 5; // px — below this = tap, above = drag
-var downX=0, downY=0;
-var DEG2RAD = Math.PI/180;
+// Drag
+var drag=false,px=0,py=0,dx0=0,dy0=0;
+var THRESH=5;
 
-function wrapDelta(d){while(d>180)d-=360;while(d<-180)d+=360;return d;}
-// Android needs deviceorientationabsolute, iOS uses deviceorientation
-function onOrientEvt(e){
-  if(e.alpha===null && e.beta===null) return; // ignore empty events
-  rawAlpha=e.alpha||0; rawBeta=e.beta||0; rawGamma=e.gamma||0;
-}
-window.addEventListener('deviceorientationabsolute', onOrientEvt, true);
-window.addEventListener('deviceorientation', onOrientEvt, true);
+// Gyro
+var gyroOn=false,rA=0,rB=0,rG=0,cA=0,cB=0,cG=0;
+function wD(d){while(d>180)d-=360;while(d<-180)d+=360;return d;}
+function onOri(e){if(e.alpha==null)return;rA=e.alpha;rB=e.beta;rG=e.gamma;}
+window.addEventListener('deviceorientationabsolute',onOri,true);
+window.addEventListener('deviceorientation',onOri,true);
 
-// ── LOAD SCENE ─────────────────────────────────────────────────────────────
-function loadScene(idx, startLon){
-  currentSceneIdx = idx;
-  if(startLon !== undefined) lon = startLon; else lon = 0;
-  lat = 0;
-
-  document.querySelectorAll('.tb').forEach(function(t,j){t.classList.toggle('active',j===idx);});
-  document.getElementById('scene-pill').textContent=(idx+1)+' / '+SCENES.length;
-  document.getElementById('scene-name-float').textContent=SCENES[idx].label;
-
-  texLoader.load(SCENES[idx].src, function(tex){
+// ── LOAD SCENE ───────────────────────────────────────────────────────────────
+function loadScene(i){
+  curIdx=i;
+  lon=0;lat=0;
+  document.querySelectorAll('.tb').forEach(function(t,j){t.classList.toggle('active',j===i);});
+  document.getElementById('spill').textContent=(i+1)+' / '+SC.length;
+  document.getElementById('sname').textContent=SC[i].label;
+  TL.load(SC[i].src,function(tex){
     tex.minFilter=THREE.LinearFilter; tex.magFilter=THREE.LinearFilter;
-    var nm = new THREE.MeshBasicMaterial({map:tex, transparent:true, opacity:0});
-    mesh.material = nm;
-    var op=0, fi=setInterval(function(){
-      op+=0.06; nm.opacity=Math.min(op,1);
-      if(op>=1){nm.transparent=false; clearInterval(fi); createHotspots(idx);}
+    var m=new THREE.MeshBasicMaterial({map:tex,transparent:true,opacity:0});
+    mesh.material=m;
+    var op=0,fi=setInterval(function(){
+      op+=0.06; m.opacity=Math.min(op,1);
+      if(op>=1){m.transparent=false;clearInterval(fi);buildHS(i);}
     },16);
   });
 }
 
-
-
-// ── THUMBNAILS ─────────────────────────────────────────────────────────────
-var thumbsEl = document.getElementById('thumbs');
-SCENES.forEach(function(sc,i){
-  var wrap=document.createElement('div'); wrap.className='tw';
-  var tb=document.createElement('div');   tb.className='tb'+(i===0?' active':'');
-  var img=document.createElement('img'); img.src=sc.src; img.alt=sc.thumb;
-  tb.appendChild(img); wrap.appendChild(tb);
-  var lbl=document.createElement('div'); lbl.className='tn'; lbl.textContent=sc.thumb;
-  wrap.appendChild(lbl);
-  wrap.addEventListener('click',function(){loadScene(i); dismissHint();});
-  thumbsEl.appendChild(wrap);
+// ── THUMBNAILS ───────────────────────────────────────────────────────────────
+var tEl=document.getElementById('thumbs');
+SC.forEach(function(sc,i){
+  var w=document.createElement('div');w.className='tw';
+  var b=document.createElement('div');b.className='tb'+(i===0?' active':'');
+  var ig=document.createElement('img');ig.src=sc.src;ig.alt=sc.thumb;
+  b.appendChild(ig);w.appendChild(b);
+  var l=document.createElement('div');l.className='tn';l.textContent=sc.thumb;
+  w.appendChild(l);
+  w.addEventListener('click',function(){loadScene(i);dimHint();});
+  tEl.appendChild(w);
 });
 
-function dismissHint(){if(!hintOff){hintOff=true;document.getElementById('hint').classList.add('hidden');}}
-
-// ── MOUSE ──────────────────────────────────────────────────────────────────
-canvas.addEventListener('mousedown',function(e){
-  dragging=false; downX=e.clientX; downY=e.clientY; lx=e.clientX; ly=e.clientY;
-  autoRot=false; document.getElementById('autoind').classList.remove('on'); document.getElementById('btn-auto').classList.remove('on');
-  dismissHint();
-});
-window.addEventListener('mousemove',function(e){
-  if(Math.abs(e.clientX-downX)>moveThreshold||Math.abs(e.clientY-downY)>moveThreshold) dragging=true;
-  if(!dragging) return;
-  lon-=(e.clientX-lx)*.22; lat+=(e.clientY-ly)*.22; lat=Math.max(-85,Math.min(85,lat));
-  lx=e.clientX; ly=e.clientY;
-});
-window.addEventListener('mouseup',function(){dragging=false;});
-
-// ── TOUCH ──────────────────────────────────────────────────────────────────
-canvas.addEventListener('touchstart',function(e){
-  dismissHint(); downX=e.touches[0].clientX; downY=e.touches[0].clientY; dragging=false;
-  if(e.touches.length===1){lx=e.touches[0].clientX; ly=e.touches[0].clientY; autoRot=false; document.getElementById('autoind').classList.remove('on'); document.getElementById('btn-auto').classList.remove('on');}
-  if(e.touches.length===2){pinch0=Math.hypot(e.touches[1].clientX-e.touches[0].clientX,e.touches[1].clientY-e.touches[0].clientY);}
-},{passive:true});
-canvas.addEventListener('touchmove',function(e){
-  if(e.touches.length===1){
-    if(Math.abs(e.touches[0].clientX-downX)>moveThreshold||Math.abs(e.touches[0].clientY-downY)>moveThreshold) dragging=true;
-    lon-=(e.touches[0].clientX-lx)*.28; lat+=(e.touches[0].clientY-ly)*.28; lat=Math.max(-85,Math.min(85,lat));
-    lx=e.touches[0].clientX; ly=e.touches[0].clientY;
-  }
-  if(e.touches.length===2){
-    var d=Math.hypot(e.touches[1].clientX-e.touches[0].clientX,e.touches[1].clientY-e.touches[0].clientY);
-    fov*=pinch0/d; fov=Math.max(30,Math.min(110,fov)); camera.fov=fov; camera.updateProjectionMatrix(); pinch0=d;
-  }
-},{passive:true});
-
-// ── WHEEL ──────────────────────────────────────────────────────────────────
-canvas.addEventListener('wheel',function(e){e.preventDefault();fov+=e.deltaY*.04;fov=Math.max(30,Math.min(110,fov));camera.fov=fov;camera.updateProjectionMatrix();dismissHint();},{passive:false});
-
-// ── ZOOM BTNS ──────────────────────────────────────────────────────────────
-document.getElementById('btn-zin').addEventListener('click',function(){fov=Math.max(30,fov-10);camera.fov=fov;camera.updateProjectionMatrix();});
-document.getElementById('btn-zout').addEventListener('click',function(){fov=Math.min(110,fov+10);camera.fov=fov;camera.updateProjectionMatrix();});
-
-// ── AUTO-ROTATE ────────────────────────────────────────────────────────────
-document.getElementById('btn-auto').addEventListener('click',function(){autoRot=!autoRot;document.getElementById('autoind').classList.toggle('on',autoRot);document.getElementById('btn-auto').classList.toggle('on',autoRot);});
-
-// ── FULLSCREEN ─────────────────────────────────────────────────────────────
-document.getElementById('btn-fs').addEventListener('click',function(){if(!document.fullscreenElement){document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();document.getElementById('btn-fs').textContent='✕';}else{document.exitFullscreen&&document.exitFullscreen();}});
-document.addEventListener('fullscreenchange',function(){if(!document.fullscreenElement)document.getElementById('btn-fs').textContent='⛶';setTimeout(function(){renderer.setSize(window.innerWidth,window.innerHeight);camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();},150);});
-
-// ── GYRO ───────────────────────────────────────────────────────────────────
-function _activateGyro(){
-  gyroOn=true;
-  calAlpha=rawAlpha; calBeta=rawBeta; calGamma=rawGamma;
-  gyroCalibrated=true;
-  document.getElementById('btn-gyro').classList.add('on');
-  document.getElementById('gyrind').classList.add('on');
-  dismissHint();
-}
-function startGyro(){
-  // iOS 13+ permission
-  if(typeof DeviceOrientationEvent!=='undefined' && typeof DeviceOrientationEvent.requestPermission==='function'){
-    DeviceOrientationEvent.requestPermission().then(function(s){
-      if(s==='granted') _activateGyro();
-      else alert('Permiso denegado. Actívalo en Ajustes > Safari.');
-    }).catch(function(err){alert('Error: '+err);});
-  } else {
-    // Android / others — check if sensor actually works
-    var testHandler=function(e){
-      window.removeEventListener('deviceorientation', testHandler, true);
-      window.removeEventListener('deviceorientationabsolute', testHandler, true);
-      if(e.alpha!==null){ _activateGyro(); }
-      else { alert('Giroscopio no disponible en este dispositivo.'); }
-    };
-    window.addEventListener('deviceorientation', testHandler, true);
-    window.addEventListener('deviceorientationabsolute', testHandler, true);
-    // Fallback if no event fires in 500ms
-    setTimeout(function(){
-      window.removeEventListener('deviceorientation', testHandler, true);
-      window.removeEventListener('deviceorientationabsolute', testHandler, true);
-      if(!gyroOn) _activateGyro(); // try anyway
-    }, 500);
-  }
-}
-function stopGyro(){
-  gyroOn=false;gyroCalibrated=false;
-  document.getElementById('btn-gyro').classList.remove('on');
-  document.getElementById('gyrind').classList.remove('on');
-}
-document.getElementById('btn-gyro').addEventListener('click',function(){
-  if(gyroOn){ stopGyro(); return; }
-  startGyro();
-});
-
-// ── SHARE ──────────────────────────────────────────────────────────────────
-document.getElementById('btn-share').addEventListener('click',function(){
-  var url=window.location.href;
-  if(navigator.share){navigator.share({title:'Recorrido Virtual 360°',text:'VENZA Construcciones',url:url}).catch(function(){});return;}
-  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(url).then(function(){showToast('✓ Link copiado');}).catch(function(){window.prompt('Copia:',url);});}else{window.prompt('Copia:',url);}
-});
-function showToast(msg){var t=document.getElementById('share-toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2500);}
-
-// ── KEYBOARD ───────────────────────────────────────────────────────────────
-window.addEventListener('keydown',function(e){
-  if(e.key==='ArrowLeft'){lon-=2;}if(e.key==='ArrowRight'){lon+=2;}
-  if(e.key==='ArrowUp'){lat=Math.min(85,lat+2);}if(e.key==='ArrowDown'){lat=Math.max(-85,lat-2);}
-  if(e.key==='+'||e.key==='='){fov=Math.max(30,fov-5);camera.fov=fov;camera.updateProjectionMatrix();}
-  if(e.key==='-'){fov=Math.min(110,fov+5);camera.fov=fov;camera.updateProjectionMatrix();}
-  if(e.key==='1')loadScene(0);if(e.key==='2')loadScene(1);if(e.key==='3')loadScene(2);
-  if(e.key==='f'||e.key==='F')document.getElementById('btn-fs').click();
-  if(e.key==='r'||e.key==='R')document.getElementById('btn-auto').click();
-  if(e.key==='g'||e.key==='G')document.getElementById('btn-gyro').click();
-});
-
-// ── RESIZE ─────────────────────────────────────────────────────────────────
-window.addEventListener('resize',function(){renderer.setSize(window.innerWidth,window.innerHeight);camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();});
-
-// ── RENDER LOOP ────────────────────────────────────────────────────────────
-function animate(){
-  requestAnimationFrame(animate);
-  if(gyroOn){
-    // Apply calibration offsets
-    var a = wrapAngle(rawAlpha - calAlpha);
-    var b = rawBeta  - calBeta;
-    var g = rawGamma - calGamma;
-
-    var screenAngle = (window.screen.orientation && window.screen.orientation.angle != null)
-                      ? window.screen.orientation.angle : (window.orientation || 0);
-
-    var targetLon, targetLat;
-
-    if(Math.abs(screenAngle) === 90){
-      // Landscape
-      targetLon = -a * 1.0;
-      targetLat =  g * 0.8;
-    } else {
-      // Portrait — beta: 90=vertical, 0=flat
-      // remap so holding phone upright (beta~90) = looking forward (lat=0)
-      targetLon = -a * 1.0;
-      targetLat =  -(b - 90) * 0.9;
-    }
-
-    targetLat = Math.max(-85, Math.min(85, targetLat));
-
-    // Smooth interpolation
-    lon += wrapDelta(targetLon - lon) * 0.12;
-    lat += (targetLat - lat) * 0.12;
-
-  }else if(autoRot&&!dragging){lon+=0.1;}
-
-  var phi=(90-lat)*DEG2RAD, theta=lon*DEG2RAD;
-  camera.lookAt(500*Math.sin(phi)*Math.cos(theta),500*Math.cos(phi),500*Math.sin(phi)*Math.sin(theta));
-  renderer.render(scene3,camera);
-  updateHotspots();
-}
-animate();
-
-// ── LOADER ─────────────────────────────────────────────────────────────────
-var lb=document.getElementById('loader-bar'); lb.style.width='35%';
-var pi=new Image();
-pi.onload=pi.onerror=function(){
-  lb.style.width='100%';
-  setTimeout(function(){document.getElementById('loader').classList.add('done');loadScene(0);},600);
-};
-pi.src=SCENES[0].src;
-
-
-
-/* ── HOTSPOTS ── */
-function createHotspots(sceneIdx){
+// ── HOTSPOTS ─────────────────────────────────────────────────────────────────
+function buildHS(si){
   document.querySelectorAll('.hs').forEach(function(h){h.remove();});
-  var sc = SCENES[sceneIdx];
-  if(!sc.hotspots) return;
-  sc.hotspots.forEach(function(h){
-    var el=document.createElement('div'); el.className='hs';
-    el.dataset.lon=h.lon; el.dataset.lat=h.lat; el.dataset.target=h.targetScene;
-    el.innerHTML='<div class="hs-ring"><div class="hs-dot"></div></div><div class="hs-label">'+h.label+'</div>';
+  SC[si].hs.forEach(function(h){
+    var el=document.createElement('div');el.className='hs';
+    el.dataset.lon=h.lon;el.dataset.lat=h.lat;el.dataset.to=h.to;
+    el.innerHTML='<div class="hs-r"><div class="hs-d"></div></div><div class="hs-l">'+h.lbl+'</div>';
     el.addEventListener('click',function(e){
       e.stopPropagation();
-      document.getElementById('hs-preview').classList.remove('show');
-      loadScene(parseInt(el.dataset.target));
-      dismissHint();
+      loadScene(h.to);dimHint();
     });
-    el.addEventListener('mouseenter',function(){
-      var prev=document.getElementById('hs-preview');
-      var rect=el.getBoundingClientRect();
-      document.getElementById('hs-preview-img').src=SCENES[h.targetScene].src;
-      document.getElementById('hs-preview-label').textContent=h.label;
-      prev.style.left=rect.left+'px';
-      prev.style.top=rect.top+'px';
-      prev.classList.add('show');
-    });
-    el.addEventListener('mouseleave',function(){
-      document.getElementById('hs-preview').classList.remove('show');
-    });
-    // Touch preview
-    el.addEventListener('touchstart',function(){
-      var prev=document.getElementById('hs-preview');
-      var rect=el.getBoundingClientRect();
-      document.getElementById('hs-preview-img').src=SCENES[h.targetScene].src;
-      document.getElementById('hs-preview-label').textContent=h.label;
-      prev.style.left=rect.left+'px';
-      prev.style.top=rect.top+'px';
-      prev.classList.add('show');
-      setTimeout(function(){prev.classList.remove('show');},1800);
-    },{passive:true});
     document.body.appendChild(el);
   });
 }
-
-function updateHotspots(){
+function updHS(){
   document.querySelectorAll('.hs').forEach(function(el){
-    var hLon=parseFloat(el.dataset.lon);
-    var hLat=parseFloat(el.dataset.lat);
-    var phi=(90-hLat)*DEG2RAD, theta=hLon*DEG2RAD;
-    var px=500*Math.sin(phi)*Math.cos(theta);
-    var py=500*Math.cos(phi);
-    var pz=500*Math.sin(phi)*Math.sin(theta);
-    var vec=new THREE.Vector3(px,py,pz);
-    var camDir=new THREE.Vector3();
-    camera.getWorldDirection(camDir);
-    var dot=camDir.dot(vec.clone().normalize());
+    var hL=parseFloat(el.dataset.lon),hLt=parseFloat(el.dataset.lat);
+    var phi=(90-hLt)*D2R,th=hL*D2R;
+    var v=new THREE.Vector3(500*Math.sin(phi)*Math.cos(th),500*Math.cos(phi),500*Math.sin(phi)*Math.sin(th));
+    var cd=new THREE.Vector3();CAM.getWorldDirection(cd);
+    var dot=cd.dot(v.clone().normalize());
     if(dot<0.15){el.style.opacity='0';el.style.pointerEvents='none';return;}
-    var proj=vec.clone().project(camera);
-    var sx=(proj.x*.5+.5)*window.innerWidth;
-    var sy=(proj.y*-.5+.5)*window.innerHeight;
-    var alpha=Math.min(1,(dot-.15)*2.5);
-    el.style.opacity=alpha.toFixed(2);
+    var p=v.clone().project(CAM);
+    el.style.left=((p.x*.5+.5)*window.innerWidth)+'px';
+    el.style.top=((p.y*-.5+.5)*window.innerHeight)+'px';
+    el.style.opacity=Math.min(1,(dot-.15)*3).toFixed(2);
     el.style.pointerEvents=dot>.3?'all':'none';
-    el.style.left=sx+'px';
-    el.style.top=sy+'px';
   });
 }
 
+// ── HINT ─────────────────────────────────────────────────────────────────────
+function dimHint(){if(!hintOff){hintOff=true;document.getElementById('hint').classList.add('hide');}}
 
-/* ── WELCOME ── */
-document.getElementById('welcome-btn').addEventListener('click',function(){
-  var w=document.getElementById('welcome');
-  w.classList.add('done');
-  setTimeout(function(){w.style.display='none';},900);
+// ── MOUSE ────────────────────────────────────────────────────────────────────
+cv.addEventListener('mousedown',function(e){
+  drag=false;px=e.clientX;py=e.clientY;dx0=e.clientX;dy0=e.clientY;
+  autoRot=false;document.getElementById('aind').classList.remove('on');document.getElementById('bauto').classList.remove('on');
+  dimHint();
+});
+window.addEventListener('mousemove',function(e){
+  if(!e.buttons)return;
+  if(Math.abs(e.clientX-dx0)>THRESH||Math.abs(e.clientY-dy0)>THRESH)drag=true;
+  if(!drag)return;
+  lon-=(e.clientX-px)*.22;lat+=(e.clientY-py)*.22;
+  lat=Math.max(-85,Math.min(85,lat));
+  px=e.clientX;py=e.clientY;
 });
 
-/* ── RESET VIEW ── */
-document.getElementById('btn-reset').addEventListener('click',function(){
-  lon=0; lat=0; fov=75;
-  camera.fov=fov; camera.updateProjectionMatrix();
-});
+// ── TOUCH ────────────────────────────────────────────────────────────────────
+var tx=0,ty=0,tx0=0,ty0=0,tdrag=false,pinch0=0;
 
-/* ── CALIBRATE GYRO ── */
-document.getElementById('btn-cal').addEventListener('click',function(){
-  if(!gyroOn){
-    // activate gyro first if not on
-    document.getElementById('btn-gyro').click();
-    return;
+cv.addEventListener('touchstart',function(e){
+  dimHint();
+  autoRot=false;document.getElementById('aind').classList.remove('on');document.getElementById('bauto').classList.remove('on');
+  if(e.touches.length===1){
+    tx=e.touches[0].clientX;ty=e.touches[0].clientY;
+    tx0=tx;ty0=ty;tdrag=false;
   }
-  // Set current device orientation as "forward"
-  calAlpha=rawAlpha; calBeta=rawBeta; calGamma=rawGamma;
-  var ci=document.getElementById('calind');
-  ci.classList.add('on');
+  if(e.touches.length===2){
+    pinch0=Math.hypot(e.touches[1].clientX-e.touches[0].clientX,e.touches[1].clientY-e.touches[0].clientY);
+  }
+},{passive:true});
+
+cv.addEventListener('touchmove',function(e){
+  if(e.touches.length===1){
+    var nx=e.touches[0].clientX,ny=e.touches[0].clientY;
+    if(Math.abs(nx-tx0)>THRESH||Math.abs(ny-ty0)>THRESH)tdrag=true;
+    if(tdrag){
+      lon-=(nx-tx)*.28;lat+=(ny-ty)*.28;
+      lat=Math.max(-85,Math.min(85,lat));
+    }
+    tx=nx;ty=ny;
+  }
+  if(e.touches.length===2){
+    var d=Math.hypot(e.touches[1].clientX-e.touches[0].clientX,e.touches[1].clientY-e.touches[0].clientY);
+    fov*=pinch0/d;fov=Math.max(30,Math.min(110,fov));
+    CAM.fov=fov;CAM.updateProjectionMatrix();pinch0=d;
+  }
+},{passive:true});
+
+// ── WHEEL ────────────────────────────────────────────────────────────────────
+cv.addEventListener('wheel',function(e){
+  e.preventDefault();fov+=e.deltaY*.04;fov=Math.max(30,Math.min(110,fov));
+  CAM.fov=fov;CAM.updateProjectionMatrix();dimHint();
+},{passive:false});
+
+// ── ZOOM BTNS ────────────────────────────────────────────────────────────────
+document.getElementById('bzin').addEventListener('click',function(){fov=Math.max(30,fov-10);CAM.fov=fov;CAM.updateProjectionMatrix();});
+document.getElementById('bzout').addEventListener('click',function(){fov=Math.min(110,fov+10);CAM.fov=fov;CAM.updateProjectionMatrix();});
+
+// ── AUTO ROTATE ──────────────────────────────────────────────────────────────
+document.getElementById('bauto').addEventListener('click',function(){
+  autoRot=!autoRot;
+  document.getElementById('aind').classList.toggle('on',autoRot);
+  this.classList.toggle('on',autoRot);
+});
+
+// ── FULLSCREEN ───────────────────────────────────────────────────────────────
+document.getElementById('bfs').addEventListener('click',function(){
+  if(!document.fullscreenElement){document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();this.textContent='✕';}
+  else{document.exitFullscreen&&document.exitFullscreen();}
+});
+document.addEventListener('fullscreenchange',function(){
+  if(!document.fullscreenElement)document.getElementById('bfs').textContent='⛶';
+  setTimeout(function(){R.setSize(window.innerWidth,window.innerHeight);CAM.aspect=window.innerWidth/window.innerHeight;CAM.updateProjectionMatrix();},150);
+});
+
+// ── GYRO ─────────────────────────────────────────────────────────────────────
+function doGyro(){
+  var sa=(window.screen.orientation&&window.screen.orientation.angle!=null)?window.screen.orientation.angle:(window.orientation||0);
+  var tLon,tLat;
+  if(Math.abs(sa)===90){tLon=-(rA-cA);tLat=-(rG-cG)*.8;}
+  else{tLon=wD(-(rA-cA));tLat=-((rB-cB)-(0))*.9;}
+  tLat=Math.max(-85,Math.min(85,tLat));
+  lon+=wD(tLon-lon)*.1;
+  lat+=(tLat-lat)*.1;
+}
+function calibrate(){cA=rA;cB=rB;cG=rG;}
+
+document.getElementById('bgyro').addEventListener('click',function(){
+  if(gyroOn){
+    gyroOn=false;this.classList.remove('on');document.getElementById('gind').classList.remove('on');return;
+  }
+  if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function'){
+    DeviceOrientationEvent.requestPermission().then(function(s){
+      if(s==='granted'){gyroOn=true;calibrate();document.getElementById('bgyro').classList.add('on');document.getElementById('gind').classList.add('on');}
+      else alert('Permiso denegado.');
+    });
+  } else {
+    gyroOn=true;calibrate();this.classList.add('on');document.getElementById('gind').classList.add('on');
+  }
+});
+
+document.getElementById('bcal').addEventListener('click',function(){
+  calibrate();
+  var ci=document.getElementById('cind');ci.classList.add('on');
   setTimeout(function(){ci.classList.remove('on');},1500);
 });
 
-/* ── HIDE UI ── */
-var uiHidden = false;
-var btnHide  = document.getElementById('btn-hide');
+// ── RESET ────────────────────────────────────────────────────────────────────
+document.getElementById('breset').addEventListener('click',function(){lon=0;lat=0;fov=75;CAM.fov=fov;CAM.updateProjectionMatrix();});
 
-btnHide.addEventListener('click', function(e){
-  e.stopPropagation();
-  uiHidden = !uiHidden;
-  document.body.classList.toggle('ui-hidden', uiHidden);
-  btnHide.textContent = uiHidden ? '▲ Mostrar UI' : '▼ Ocultar UI';
+// ── SHARE ────────────────────────────────────────────────────────────────────
+document.getElementById('bshare').addEventListener('click',function(){
+  var url=window.location.href;
+  if(navigator.share){navigator.share({title:'La Rioja · Arq. Francisco Valenzuela',url:url}).catch(function(){});return;}
+  if(navigator.clipboard){navigator.clipboard.writeText(url).then(function(){showT('✓ Link copiado');});}
+  else{window.prompt('Copia:',url);}
 });
+function showT(m){var t=document.getElementById('stst');t.textContent=m;t.classList.add('on');setTimeout(function(){t.classList.remove('on');},2500);}
 
-// Tap anywhere on canvas to show UI again
-canvas.addEventListener('click', function(){
-  if(uiHidden){
-    uiHidden = false;
-    document.body.classList.remove('ui-hidden');
-    btnHide.textContent = '▼ Ocultar UI';
+// ── HIDE UI ──────────────────────────────────────────────────────────────────
+var hu=document.getElementById('hideui');
+hu.addEventListener('click',function(e){
+  e.stopPropagation();
+  uiHid=!uiHid;
+  document.body.classList.toggle('uih',uiHid);
+  hu.textContent=uiHid?'▲ Mostrar UI':'▼ Ocultar UI';
+});
+cv.addEventListener('click',function(){
+  if(uiHid&&!tdrag){
+    uiHid=false;document.body.classList.remove('uih');
+    hu.textContent='▼ Ocultar UI';
   }
 });
+
+// ── WELCOME ──────────────────────────────────────────────────────────────────
+document.getElementById('wbtn').addEventListener('click',function(){
+  var w=document.getElementById('welcome');
+  w.classList.add('hide');
+  setTimeout(function(){w.style.display='none';},900);
+});
+
+// ── KEYBOARD ─────────────────────────────────────────────────────────────────
+window.addEventListener('keydown',function(e){
+  if(e.key==='ArrowLeft')lon-=2;if(e.key==='ArrowRight')lon+=2;
+  if(e.key==='ArrowUp')lat=Math.min(85,lat+2);if(e.key==='ArrowDown')lat=Math.max(-85,lat-2);
+  if(e.key==='+'||e.key==='='){fov=Math.max(30,fov-5);CAM.fov=fov;CAM.updateProjectionMatrix();}
+  if(e.key==='-'){fov=Math.min(110,fov+5);CAM.fov=fov;CAM.updateProjectionMatrix();}
+  if(e.key==='1')loadScene(0);if(e.key==='2')loadScene(1);if(e.key==='3')loadScene(2);
+});
+
+// ── RESIZE ───────────────────────────────────────────────────────────────────
+window.addEventListener('resize',function(){
+  R.setSize(window.innerWidth,window.innerHeight);
+  CAM.aspect=window.innerWidth/window.innerHeight;CAM.updateProjectionMatrix();
+});
+
+// ── RENDER LOOP ──────────────────────────────────────────────────────────────
+function animate(){
+  requestAnimationFrame(animate);
+  if(gyroOn) doGyro();
+  else if(autoRot)lon+=0.1;
+  lat=Math.max(-85,Math.min(85,lat));
+  var phi=(90-lat)*D2R,th=lon*D2R;
+  CAM.lookAt(500*Math.sin(phi)*Math.cos(th),500*Math.cos(phi),500*Math.sin(phi)*Math.sin(th));
+  R.render(S,CAM);
+  updHS();
+}
+animate();
+
+// ── LOADER ───────────────────────────────────────────────────────────────────
+var lb=document.getElementById('lb');lb.style.width='35%';
+var pi=new Image();
+pi.onload=pi.onerror=function(){
+  lb.style.width='100%';
+  setTimeout(function(){
+    document.getElementById('ldr').classList.add('hide');
+    loadScene(0);
+  },600);
+};
+pi.src=SC[0].src;
 </script>
 </body>
 </html>
